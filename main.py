@@ -19,7 +19,7 @@ temp = {
 }
 
 
-async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace):
+async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None):
     channel = discord_bot.get_channel(id=channel_id)
     text = vk_message.text
     for s, s_replace in text_replace.items():
