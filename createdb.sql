@@ -1,6 +1,7 @@
 CREATE TABLE "Server" (
 	"server_id"	INTEGER NOT NULL UNIQUE,
 	"server_default_channel"	INTEGER,
+	"default_image_channel"	INTEGER,
 	PRIMARY KEY("server_id")
 );
 

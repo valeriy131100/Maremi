@@ -49,6 +49,26 @@ async def get_default_channel(server_id=None, chat_id=None):
             return await get_default_channel(server_id=server_id)
 
 
+async def get_default_image_channel(server_id=None, chat_id=None):
+    if not (server_id or chat_id):
+        return
+    else:
+        if server_id:
+            async with aiosqlite.connect(db_file) as db:
+                cur = await db.cursor()
+                await cur.execute(
+                    'SELECT default_image_channel FROM Server WHERE server_id=?', (server_id,)
+                )
+                result = (await cur.fetchone())[0]
+                if result:
+                    return result
+                else:
+                    return await get_default_channel(server_id=server_id)
+        else:
+            server_id = await get_chat_server(chat_id)
+            return await get_default_image_channel(server_id=server_id)
+
+
 async def make_alias(server_id, channel_id, alias):
     async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()

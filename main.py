@@ -90,6 +90,12 @@ async def send(message: vkbottle.bot.Message):
     await send_to_discord(channel_id, message, text_replace={'/send ': '', '/send': ''})
 
 
+@vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/art')))
+async def send(message: vkbottle.bot.Message):
+    channel_id = await db_helpers.get_default_image_channel(chat_id=message.chat_id)
+    await send_to_discord(channel_id, message, text_replace={'/art ': '', '/art': ''})
+
+
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('#')))
 async def alias_send(message: vkbottle.bot.Message):
     aliases = await db_helpers.get_aliases(chat_id=message.chat_id)
