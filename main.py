@@ -1,9 +1,10 @@
-import discord
-from discord.ext import commands
 import vkbottle.bot
+from discord.ext import commands
+from aiosqlite import IntegrityError
 
 import asyncio
 from config import vk_token, discord_token
+from db_helpers import make_server_to_chat, get_default_channel, make_alias, get_aliases, get_channel_by_alias
 
 vk_bot = vkbottle.bot.Bot(vk_token)
 discord_bot = commands.Bot(command_prefix='m.')
@@ -17,6 +18,12 @@ temp = {
         # dict vk_chat_id: discord_channel_id
     }
 }
+
+
+async def send_to_discord(channel_id, text=None, images=None):
+    channel = discord_bot.get_channel(id=channel_id)
+    if text:
+        await channel.send(text)
 
 
 @discord_bot.command()
@@ -33,9 +40,21 @@ async def connect(context: commands.Context, chat_id):
     else:
         if temp['chats'].get(chat_id, False):
             temp['channels'][chat_id] = context.channel.id
-            await context.send(f'Канал {context.channel.id} успешно привязан к чату {chat_id}')
+            await make_server_to_chat(context.guild.id, chat_id, default_channel=context.channel.id)
+            await context.send(f'Сервер {context.guild.id} успешно привязан к чату {chat_id}')
+            await context.send(f'Канал по умолчанию установлен на текущий ({context.channel.id})')
         else:
             await context.channel.send(f'Чат {chat_id} не разрешил себя привязывать')
+
+
+@discord_bot.command()
+async def alias(context: commands.Context, alias_word):
+    try:
+        await make_alias(context.guild.id, context.channel.id, alias_word)
+        await context.send(f'Алиас {alias_word} для канала был создан. Используйте #{alias_word} в вк-боте, '
+                           f'чтобы слать сюда сообщения.')
+    except IntegrityError:
+        await context.send(f'Подобный алиас уже существует. Используйте {context.prefix}removealias')
 
 
 @vk_bot.on.chat_message(text='/start')
@@ -51,11 +70,22 @@ async def make_online(message: vkbottle.bot.Message):
 
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/send')))
 async def send(message: vkbottle.bot.Message):
-    text = message.text[message.text.find('/send '):]
-    channel_id = temp['channels'][message.chat_id]
-    await message.answer(f'Пытаюсь отправить сообщение в канал {channel_id}')
-    channel = discord_bot.get_channel(id=channel_id)
-    await channel.send(text)
+    text = message.text.replace('/send ', '')
+    channel_id = await get_default_channel(chat_id=message.chat_id)
+    await send_to_discord(channel_id, text)
+
+
+@vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('#')))
+async def send(message: vkbottle.bot.Message):
+    aliases = await get_aliases(chat_id=message.chat_id)
+    for alias in aliases:
+        if message.text.startswith(f'#{alias}'):
+            text = message.text.replace(f'#{alias}', '')
+            channel_id = await get_channel_by_alias(alias, chat_id=message.chat_id)
+            await send_to_discord(channel_id, text)
+            return
+
+    await message.answer(f'Не удалось найти алиас')
 
 
 loop = asyncio.get_event_loop()

@@ -1,3 +1,4 @@
 vkbottle~=3.0.2
 environs~=9.3.5
 discord.py~=1.7.3
+aiosqlite~=0.17.0
