@@ -19,10 +19,10 @@ temp = {
 }
 
 
-async def send_to_discord(channel_id, text=None, images=None):
+async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
     channel = discord_bot.get_channel(id=channel_id)
-    if text:
-        await channel.send(text)
+    if vk_message.text:
+        await channel.send(vk_message.text)
 
 
 @discord_bot.command()
@@ -76,7 +76,7 @@ async def make_online(message: vkbottle.bot.Message):
 async def send(message: vkbottle.bot.Message):
     text = message.text.replace('/send ', '')
     channel_id = await db_helpers.get_default_channel(chat_id=message.chat_id)
-    await send_to_discord(channel_id, text)
+    await send_to_discord(channel_id, message)
 
 
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('#')))
@@ -86,7 +86,7 @@ async def send(message: vkbottle.bot.Message):
         if message.text.startswith(f'#{alias}'):
             text = message.text.replace(f'#{alias}', '')
             channel_id = await db_helpers.get_channel_by_alias(alias, chat_id=message.chat_id)
-            await send_to_discord(channel_id, text)
+            await send_to_discord(channel_id, message)
             return
 
     await message.answer(f'Не удалось найти алиас')
