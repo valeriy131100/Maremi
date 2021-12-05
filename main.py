@@ -1,8 +1,8 @@
-from pathlib import Path
-
 import vkbottle.bot
 from discord.ext import commands
 from aiosqlite import IntegrityError
+from pathlib import Path
+from vkbottle_types.objects import PhotosPhotoSizesType
 
 import asyncio
 from config import vk_token, discord_token, db_file
@@ -23,6 +23,13 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
     channel = discord_bot.get_channel(id=channel_id)
     if vk_message.text:
         await channel.send(vk_message.text)
+
+    if vk_message.attachments:
+        for attachment in vk_message.attachments:
+            if photo := attachment.photo:
+                for size in photo.sizes:
+                    if size.type == PhotosPhotoSizesType.Z:
+                        await channel.send(size.url)
 
 
 @discord_bot.command()
