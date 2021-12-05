@@ -97,7 +97,7 @@ async def send(message: vkbottle.bot.Message):
         if message.text.startswith(f'#{alias}'):
             text = message.text.replace(f'#{alias}', '')
             channel_id = await db_helpers.get_channel_by_alias(alias, chat_id=message.chat_id)
-            await send_to_discord(channel_id, message)
+            await send_to_discord(channel_id, message, {f'#{alias} ': '', f'#{alias}': ''})
             return
 
     await message.answer(f'Не удалось найти алиас')
