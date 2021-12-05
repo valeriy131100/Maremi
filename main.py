@@ -19,10 +19,15 @@ temp = {
 }
 
 
-async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
+async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace):
     channel = discord_bot.get_channel(id=channel_id)
-    if vk_message.text:
-        await channel.send(vk_message.text)
+    text = vk_message.text
+    for s, s_replace in text_replace.items():
+        text = text.replace(s, s_replace)
+        if not text:
+            break
+    if text:
+        await channel.send(text)
 
     if vk_message.attachments:
         for attachment in vk_message.attachments:
@@ -81,9 +86,8 @@ async def make_online(message: vkbottle.bot.Message):
 
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/send')))
 async def send(message: vkbottle.bot.Message):
-    text = message.text.replace('/send ', '')
     channel_id = await db_helpers.get_default_channel(chat_id=message.chat_id)
-    await send_to_discord(channel_id, message)
+    await send_to_discord(channel_id, message, text_replace={'/send ': '', '/send': ''})
 
 
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('#')))
