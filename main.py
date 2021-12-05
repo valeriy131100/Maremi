@@ -68,6 +68,16 @@ async def alias(context: commands.Context, alias_word):
 
 
 @discord_bot.command()
+async def removealias(context: commands.Context, alias_word):
+    try:
+        await db_helpers.delete_alias(context.guild.id, alias_word)
+    except IndexError:
+        await context.send(f'Алиас не найден')
+    else:
+        await context.send(f'Алиас {alias_word} успешно удален')
+
+
+@discord_bot.command()
 async def setdefault(context: commands.Context):
     await db_helpers.set_default_channel(server_id=context.guild.id, channel_id=context.channel.id)
     await context.send(f'Текущий канал установлен как канал по умолчанию')

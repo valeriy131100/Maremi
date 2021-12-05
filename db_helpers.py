@@ -99,6 +99,24 @@ async def make_alias(server_id, channel_id, alias):
         await db.commit()
 
 
+async def delete_alias(server_id, alias):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT alias FROM ServerChannelAlias where server_id=? and alias=?',
+            (server_id, alias)
+        )
+        result = await cur.fetchone()
+        if result:
+            await cur.execute(
+                'DELETE FROM ServerChannelAlias WHERE server_id=? and alias=?',
+                (server_id, alias)
+            )
+            await db.commit()
+        else:
+            raise IndexError
+
+
 async def get_aliases(server_id=None, chat_id=None):
     if not (server_id or chat_id):
         return
