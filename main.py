@@ -91,7 +91,7 @@ async def send(message: vkbottle.bot.Message):
 
 
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('#')))
-async def send(message: vkbottle.bot.Message):
+async def alias_send(message: vkbottle.bot.Message):
     aliases = await db_helpers.get_aliases(chat_id=message.chat_id)
     for alias in aliases:
         if message.text.startswith(f'#{alias}'):
