@@ -67,6 +67,18 @@ async def alias(context: commands.Context, alias_word):
         await context.send(f'Подобный алиас уже существует. Используйте {context.prefix}removealias')
 
 
+@discord_bot.command()
+async def setdefault(context: commands.Context):
+    await db_helpers.set_default_channel(server_id=context.guild.id, channel_id=context.channel.id)
+    await context.send(f'Текущий канал установлен как канал по умолчанию')
+
+
+@discord_bot.command()
+async def setart(context: commands.Context):
+    await db_helpers.set_default_image_channel(server_id=context.guild.id, channel_id=context.channel.id)
+    await context.send(f'Текущий канал установлен как канал по умолчанию для изображений')
+
+
 @vk_bot.on.chat_message(text='/start')
 async def start(message: vkbottle.bot.Message):
     await message.answer(f'Привет. chat_id={message.chat_id}')

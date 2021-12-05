@@ -69,6 +69,26 @@ async def get_default_image_channel(server_id=None, chat_id=None):
             return await get_default_image_channel(server_id=server_id)
 
 
+async def set_default_channel(server_id, channel_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'UPDATE Server SET server_default_channel=? where server_id=?',
+            (channel_id, server_id)
+        )
+        await db.commit()
+
+
+async def set_default_image_channel(server_id, channel_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'UPDATE Server SET default_image_channel=? where server_id=?',
+            (channel_id, server_id)
+        )
+        await db.commit()
+
+
 async def make_alias(server_id, channel_id, alias):
     async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
