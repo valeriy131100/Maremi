@@ -5,3 +5,4 @@ env.read_env()
 
 vk_token = env('VK_TOKEN')
 discord_token = env('DISCORD_TOKEN')
+db_file = env('DATABASE', default='servers.db')

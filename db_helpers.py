@@ -1,8 +1,16 @@
 import aiosqlite
+import aiofiles
+from config import db_file
+
+
+async def create_db():
+    async with aiosqlite.connect(db_file) as db, aiofiles.open('createdb.sql', 'r') as create_sql:
+        cur = await db.cursor()
+        await cur.executescript(await create_sql.read())
 
 
 async def make_server_to_chat(server_id, chat_id, default_channel):
-    async with aiosqlite.connect('servers.db') as db:
+    async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
         await cur.execute(
             'INSERT INTO Server (server_id, server_default_channel) VALUES (?, ?)',
@@ -16,7 +24,7 @@ async def make_server_to_chat(server_id, chat_id, default_channel):
 
 
 async def get_chat_server(chat_id):
-    async with aiosqlite.connect('servers.db') as db:
+    async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
         await cur.execute(
             'SELECT server_id FROM ServerToChat WHERE chat_id=?', (chat_id, )
@@ -30,7 +38,7 @@ async def get_default_channel(server_id=None, chat_id=None):
         return
     else:
         if server_id:
-            async with aiosqlite.connect('servers.db') as db:
+            async with aiosqlite.connect(db_file) as db:
                 cur = await db.cursor()
                 await cur.execute(
                     'SELECT server_default_channel FROM Server WHERE server_id=?', (server_id,)
@@ -42,7 +50,7 @@ async def get_default_channel(server_id=None, chat_id=None):
 
 
 async def make_alias(server_id, channel_id, alias):
-    async with aiosqlite.connect('servers.db') as db:
+    async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
         await cur.execute(
             'INSERT INTO ServerChannelAlias (server_id, channel_id, alias) VALUES (?, ?, ?)',
@@ -56,7 +64,7 @@ async def get_aliases(server_id=None, chat_id=None):
         return
     else:
         if server_id:
-            async with aiosqlite.connect('servers.db') as db:
+            async with aiosqlite.connect(db_file) as db:
                 cur = await db.cursor()
                 await cur.execute(
                     'SELECT alias FROM ServerChannelAlias where server_id=?', (server_id,)
@@ -74,7 +82,7 @@ async def get_channel_by_alias(alias, server_id=None, chat_id=None):
         return
     else:
         if server_id:
-            async with aiosqlite.connect('servers.db') as db:
+            async with aiosqlite.connect(db_file) as db:
                 cur = await db.cursor()
                 await cur.execute(
                     'SELECT channel_id FROM ServerChannelAlias where alias=?', (alias,)
