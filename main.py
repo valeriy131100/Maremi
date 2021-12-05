@@ -15,9 +15,6 @@ discord_bot = commands.Bot(command_prefix='m.')
 temp = {
     'chats': {
         # dict vk_chat_id: on/off bool
-    },
-    'channels': {
-        # dict vk_chat_id: discord_channel_id
     }
 }
 
@@ -41,7 +38,6 @@ async def connect(context: commands.Context, chat_id):
         await context.send(f'Это не id чата Вконтакте')
     else:
         if temp['chats'].get(chat_id, False):
-            temp['channels'][chat_id] = context.channel.id
             await db_helpers.make_server_to_chat(context.guild.id, chat_id, default_channel=context.channel.id)
             await context.send(f'Сервер {context.guild.id} успешно привязан к чату {chat_id}')
             await context.send(f'Канал по умолчанию установлен на текущий ({context.channel.id})')
@@ -68,6 +64,12 @@ async def start(message: vkbottle.bot.Message):
 async def make_online(message: vkbottle.bot.Message):
     temp['chats'][message.chat_id] = True
     await message.answer(f'К чату теперь можно подключиться. Напишите дискорд-боту m.connect {message.chat_id}')
+
+
+@vk_bot.on.chat_message(text='/makeoffline')
+async def make_online(message: vkbottle.bot.Message):
+    temp['chats'][message.chat_id] = False
+    await message.answer(f'К чату теперь нельзя подключиться')
 
 
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/send')))
