@@ -85,8 +85,8 @@ async def on_message(message: discord.Message):
             if not message.content.startswith(discord_bot.command_prefix):
                 chat_id = await db_helpers.get_server_chat(message.guild.id)
                 await send_to_vk(chat_id, message)
-            else:
-                await discord_bot.process_commands(message)
+    else:
+        await discord_bot.process_commands(message)
 
 
 @discord_bot.command()
