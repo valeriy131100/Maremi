@@ -6,7 +6,7 @@ CREATE TABLE "Server" (
 );
 
 CREATE TABLE "ServerChannelAlias" (
-	"server_id"	INTEGER NOT NULL UNIQUE,
+	"server_id"	INTEGER NOT NULL,
 	"channel_id"	INTEGER,
 	"alias"	TEXT,
 	UNIQUE("server_id","alias"),
