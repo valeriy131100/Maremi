@@ -20,3 +20,9 @@ CREATE TABLE "ServerToChat" (
 	FOREIGN KEY("server_id") REFERENCES "Server"("server_id") ON DELETE CASCADE
 );
 
+CREATE TABLE "VkNickName" (
+	"vk_id"	INTEGER NOT NULL UNIQUE,
+	"nickname"	TEXT,
+	PRIMARY KEY("vk_id")
+);
+

@@ -33,10 +33,17 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
         if embed:
             user = await vk_message.get_user(fields=['photo_50'])
             embed_message = discord.Embed(description=vk_message.text)
-            embed_message.set_author(
-                name=f'{user.first_name} {user.last_name}',
-                icon_url=f'{user.photo_50}'
-            )
+            user_nickname = await db_helpers.get_vk_nickname(user.id)
+            if user_nickname:
+                embed_message.set_author(
+                    name=f'{user_nickname} ({user.first_name} {user.last_name})',
+                    icon_url=f'{user.photo_50}'
+                )
+            else:
+                embed_message.set_author(
+                    name=f'{user.first_name} {user.last_name}',
+                    icon_url=f'{user.photo_50}'
+                )
             if vk_message.attachments:
                 for attachment in vk_message.attachments:
                     if photo := attachment.photo:
@@ -167,6 +174,21 @@ async def alias_send(message: vkbottle.bot.Message):
             return
 
     await message.answer(f'Не удалось найти алиас')
+
+
+@vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/nickname')))
+async def set_nickname(message: vkbottle.bot.Message):
+    nickname = message.text.replace('/nickname ', '')
+    user = await message.get_user()
+    await db_helpers.set_vk_nickname(user.id, nickname)
+    await message.answer(f'Никнейм {nickname} успешно установлен')
+
+
+@vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/removenickname')))
+async def remove_nickname(message: vkbottle.bot.Message):
+    user = await message.get_user()
+    await db_helpers.set_vk_nickname(user.id, None)
+    await message.answer(f'Никнейм успешно удален')
 
 
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: not message.text.startswith(('/', '#'))))

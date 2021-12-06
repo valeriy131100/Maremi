@@ -191,3 +191,28 @@ async def get_chat_duplex_channel(chat_id):
         )
         result = await cur.fetchone()
         return result[0]
+
+
+async def set_vk_nickname(vk_id, nickname):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        try:
+            await cur.execute('INSERT INTO VkNickName (vk_id, nickname) VALUES (?, ?)', (vk_id, nickname))
+        except aiosqlite.IntegrityError:
+            await cur.execute(
+                'UPDATE VkNickName SET nickname=? where vk_id=?',
+                (nickname, vk_id)
+            )
+        await db.commit()
+
+
+async def get_vk_nickname(vk_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT nickname FROM VkNickName where vk_id=?',
+            (vk_id,)
+        )
+        result = await cur.fetchone()
+        if result:
+            return result[0]
