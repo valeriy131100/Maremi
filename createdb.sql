@@ -9,7 +9,6 @@ CREATE TABLE "ServerChannelAlias" (
 	"server_id"	INTEGER NOT NULL UNIQUE,
 	"channel_id"	INTEGER,
 	"alias"	TEXT,
-	PRIMARY KEY("server_id"),
 	UNIQUE("server_id","alias"),
 	FOREIGN KEY("server_id") REFERENCES "Server"("server_id") ON DELETE CASCADE
 );
