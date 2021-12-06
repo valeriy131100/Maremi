@@ -33,6 +33,16 @@ async def get_chat_server(chat_id):
         return server_id
 
 
+async def get_server_chat(server_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT chat_id FROM ServerToChat WHERE server_id=?', (server_id, )
+        )
+        chat_id = (await cur.fetchone())[0]
+        return chat_id
+
+
 async def get_default_channel(server_id=None, chat_id=None):
     if not (server_id or chat_id):
         return
@@ -149,3 +159,35 @@ async def get_channel_by_alias(alias, server_id=None, chat_id=None):
         else:
             server_id = await get_chat_server(chat_id)
             return await get_channel_by_alias(alias, server_id=server_id)
+
+
+async def set_duplex_channel(server_id, channel_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'UPDATE Server SET duplex_channel=? where server_id=?',
+            (channel_id, server_id)
+        )
+        await db.commit()
+
+
+async def is_duplex_channel(server_id, channel_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT server_id from Server where server_id=? and duplex_channel=?',
+            (server_id, channel_id)
+        )
+        result = await cur.fetchone()
+        return bool(result)
+
+
+async def get_chat_duplex_channel(chat_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT duplex_channel from ServerToChat stc, Server s where stc.server_id = s.server_id and chat_id=?',
+            (chat_id,)
+        )
+        result = await cur.fetchone()
+        return result[0]

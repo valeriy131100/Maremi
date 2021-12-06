@@ -1,3 +1,4 @@
+import discord
 import vkbottle.bot
 from discord.ext import commands
 from aiosqlite import IntegrityError
@@ -7,6 +8,7 @@ from vkbottle_types.objects import PhotosPhotoSizesType
 import asyncio
 from config import vk_token, discord_token, db_file
 import db_helpers
+from vk_utils import get_random_id
 
 vk_bot = vkbottle.bot.Bot(vk_token)
 discord_bot = commands.Bot(command_prefix='m.')
@@ -22,10 +24,11 @@ temp = {
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None):
     channel = discord_bot.get_channel(id=channel_id)
     text = vk_message.text
-    for s, s_replace in text_replace.items():
-        text = text.replace(s, s_replace)
-        if not text:
-            break
+    if text_replace:
+        for s, s_replace in text_replace.items():
+            text = text.replace(s, s_replace)
+            if not text:
+                break
     if text:
         await channel.send(text)
 
@@ -35,6 +38,18 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
                 for size in photo.sizes:
                     if size.type == PhotosPhotoSizesType.Z:
                         await channel.send(size.url)
+
+
+async def send_to_vk(chat_id, discord_message: discord.Message):
+    await vk_bot.api.messages.send(chat_id=chat_id, message=discord_message.content, random_id=get_random_id())
+
+
+@discord_bot.event
+async def on_message(message: discord.Message):
+    if await db_helpers.is_duplex_channel(message.guild.id, message.channel.id):
+        if not (message.content.startswith('m.') or message.author == discord_bot.user):
+            chat_id = await db_helpers.get_server_chat(message.guild.id)
+            await send_to_vk(chat_id, message)
 
 
 @discord_bot.command()
@@ -89,6 +104,12 @@ async def setart(context: commands.Context):
     await context.send(f'Текущий канал установлен как канал по умолчанию для изображений')
 
 
+@discord_bot.command()
+async def setduplex(context: commands.Context):
+    await db_helpers.set_duplex_channel(server_id=context.guild.id, channel_id=context.channel.id)
+    await context.send(f'Текущий канал установлен как дуплексный канал')
+
+
 @vk_bot.on.chat_message(text='/start')
 async def start(message: vkbottle.bot.Message):
     await message.answer(f'Привет. chat_id={message.chat_id}')
@@ -129,6 +150,15 @@ async def alias_send(message: vkbottle.bot.Message):
             return
 
     await message.answer(f'Не удалось найти алиас')
+
+
+@vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: not message.text.startswith(('/', '#'))))
+async def duplex_chat(message: vkbottle.bot.Message):
+    duplex_channel = await db_helpers.get_chat_duplex_channel(message.chat_id)
+    print(duplex_channel)
+    if duplex_channel:
+        await send_to_discord(duplex_channel, message)
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
