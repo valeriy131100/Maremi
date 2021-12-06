@@ -8,7 +8,7 @@ from vkbottle_types.objects import PhotosPhotoSizesType
 import asyncio
 from config import vk_token, discord_token, db_file
 import db_helpers
-from vk_utils import get_random_id, get_user_photo
+from vk_utils import get_random_id
 
 vk_bot = vkbottle.bot.Bot(vk_token)
 discord_bot = commands.Bot(command_prefix='m.')
