@@ -8,7 +8,7 @@ from vkbottle_types.objects import PhotosPhotoSizesType
 import asyncio
 from config import vk_token, discord_token, db_file
 import db_helpers
-from vk_utils import get_random_id
+from vk_utils import get_random_id, get_user_photo
 
 vk_bot = vkbottle.bot.Bot(vk_token)
 discord_bot = commands.Bot(command_prefix='m.')
@@ -21,7 +21,7 @@ temp = {
 }
 
 
-async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None):
+async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None, embed=True):
     channel = discord_bot.get_channel(id=channel_id)
     text = vk_message.text
     if text_replace:
@@ -30,7 +30,24 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
             if not text:
                 break
     if text:
-        await channel.send(text)
+        if embed:
+            user = await vk_message.get_user(fields=['photo_50'])
+            embed_message = discord.Embed(description=vk_message.text)
+            embed_message.set_author(
+                name=f'{user.first_name} {user.last_name}',
+                icon_url=f'{user.photo_50}'
+            )
+            if vk_message.attachments:
+                for attachment in vk_message.attachments:
+                    if photo := attachment.photo:
+                        for size in photo.sizes:
+                            if size.type == PhotosPhotoSizesType.Z:
+                                embed_message.set_image(url=size.url)
+                        break
+            await channel.send(embed=embed_message)
+            return
+        else:
+            await channel.send(text)
 
     if vk_message.attachments:
         for attachment in vk_message.attachments:
