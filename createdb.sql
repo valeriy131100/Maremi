@@ -26,3 +26,9 @@ CREATE TABLE "VkNickName" (
 	PRIMARY KEY("vk_id")
 );
 
+CREATE TABLE "DiscordNickName" (
+	"discord_id"	INTEGER NOT NULL UNIQUE,
+	"nickname"	TEXT,
+	PRIMARY KEY("discord_id")
+);
+
