@@ -216,3 +216,32 @@ async def get_vk_nickname(vk_id):
         result = await cur.fetchone()
         if result:
             return result[0]
+
+
+async def set_discord_nickname(discord_id, nickname):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        try:
+            await cur.execute(
+                'INSERT INTO DiscordNickName (discord_id, nickname) VALUES (?, ?)',
+                (discord_id, nickname)
+            )
+        except aiosqlite.IntegrityError:
+            await cur.execute(
+                'UPDATE DiscordNickName SET nickname=? where discord_id=?',
+                (nickname, discord_id)
+            )
+        await db.commit()
+
+
+async def get_discord_nickname(discord_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT nickname FROM DiscordNickName where discord_id=?',
+            (discord_id,)
+        )
+        result = await cur.fetchone()
+        if result:
+            return result[0]
+

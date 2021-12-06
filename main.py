@@ -65,20 +65,45 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
 
 
 async def send_to_vk(chat_id, discord_message: discord.Message):
-    await vk_bot.api.messages.send(chat_id=chat_id, message=discord_message.content, random_id=get_random_id())
+    nickname = await db_helpers.get_discord_nickname(discord_message.author.id)
+    if nickname:
+        author_string = f'{nickname} ({discord_message.author}):'
+    else:
+        author_string = f'{discord_message.author}:'
+    message_text = f'{author_string}\n{discord_message.content}'
+
+    if attaches := discord_message.attachments:
+        for attach in attaches:
+            message_text += f'\n{attach.url}'
+    await vk_bot.api.messages.send(chat_id=chat_id, message=message_text, random_id=get_random_id())
 
 
 @discord_bot.event
 async def on_message(message: discord.Message):
     if await db_helpers.is_duplex_channel(message.guild.id, message.channel.id):
-        if not (message.content.startswith('m.') or message.author == discord_bot.user):
-            chat_id = await db_helpers.get_server_chat(message.guild.id)
-            await send_to_vk(chat_id, message)
+        if not message.author == discord_bot.user:
+            if not message.content.startswith(discord_bot.command_prefix):
+                chat_id = await db_helpers.get_server_chat(message.guild.id)
+                await send_to_vk(chat_id, message)
+            else:
+                await discord_bot.process_commands(message)
 
 
 @discord_bot.command()
 async def start(context: commands.Context):
     await context.send(f'Привет! channel_id={context.channel.id}')
+
+
+@discord_bot.command()
+async def setnickname(context: commands.Context, nickname):
+    await db_helpers.set_discord_nickname(context.author.id, nickname)
+    await context.send(f'Никнейм {nickname} успешно установлен')
+
+
+@discord_bot.command()
+async def removenickname(context: commands.Context):
+    await db_helpers.set_discord_nickname(context.author.id, None)
+    await context.send(f'Никнейм успешно удален')
 
 
 @discord_bot.command()
