@@ -28,7 +28,7 @@ async def make_embed(vk_message: vkbottle.bot.Message, text=None):
     if text:
         embed_message = discord.Embed(description=text, timestamp=timestamp)
     else:
-        embed_message = discord.Embed(description=text)
+        embed_message = discord.Embed(timestamp=timestamp)
 
     user_nickname = await db_helpers.get_vk_nickname(user.id)
     if user_nickname:
