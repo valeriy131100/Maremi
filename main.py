@@ -113,16 +113,69 @@ async def start(context: commands.Context):
     await context.send(f'Привет! channel_id={context.channel.id}')
 
 
-@discord_bot.command()
-async def setnickname(context: commands.Context, nickname):
+@discord_bot.group(pass_context=True)
+async def make(context: commands.Context):
+    pass
+
+
+@make.command(name='alias')
+async def set_alias(context: commands.Context, alias_word):
+    try:
+        await db_helpers.make_alias(context.guild.id, context.channel.id, alias_word)
+        await context.send(f'Алиас {alias_word} для канала был создан. Используйте #{alias_word} в вк-боте, '
+                           f'чтобы слать сюда сообщения.')
+    except IntegrityError:
+        await context.send(f'Подобный алиас уже существует. Используйте {context.prefix}removealias')
+
+
+@discord_bot.group(pass_context=True, name='set')
+async def set_(context: commands.Context):
+    pass
+
+
+@set_.command(name='nickname')
+async def set_nickname(context: commands.Context, nickname):
     await db_helpers.set_discord_nickname(context.author.id, nickname)
     await context.send(f'Никнейм {nickname} успешно установлен')
 
 
-@discord_bot.command()
-async def removenickname(context: commands.Context):
+@set_.command(name='default')
+async def set_default(context: commands.Context):
+    await db_helpers.set_default_channel(server_id=context.guild.id, channel_id=context.channel.id)
+    await context.send(f'Текущий канал установлен как канал по умолчанию')
+
+
+@set_.command(name='art')
+async def set_art(context: commands.Context):
+    await db_helpers.set_default_image_channel(server_id=context.guild.id, channel_id=context.channel.id)
+    await context.send(f'Текущий канал установлен как канал по умолчанию для изображений')
+
+
+@set_.command(name='duplex')
+async def set_duplex(context: commands.Context):
+    await db_helpers.set_duplex_channel(server_id=context.guild.id, channel_id=context.channel.id)
+    await context.send(f'Текущий канал установлен как дуплексный канал')
+
+
+@discord_bot.group(pass_context=True, name='remove')
+async def remove(context: commands.Context):
+    pass
+
+
+@remove.command(name='nickname')
+async def remove_nickname(context: commands.Context):
     await db_helpers.set_discord_nickname(context.author.id, None)
     await context.send(f'Никнейм успешно удален')
+
+
+@remove.command(name='alias')
+async def remove_alias(context: commands.Context, alias_word):
+    try:
+        await db_helpers.delete_alias(context.guild.id, alias_word)
+    except IndexError:
+        await context.send(f'Алиас не найден')
+    else:
+        await context.send(f'Алиас {alias_word} успешно удален')
 
 
 @discord_bot.command()
@@ -138,44 +191,6 @@ async def connect(context: commands.Context, chat_id):
             await context.send(f'Канал по умолчанию установлен на текущий ({context.channel.id})')
         else:
             await context.channel.send(f'Чат {chat_id} не разрешил себя привязывать')
-
-
-@discord_bot.command()
-async def alias(context: commands.Context, alias_word):
-    try:
-        await db_helpers.make_alias(context.guild.id, context.channel.id, alias_word)
-        await context.send(f'Алиас {alias_word} для канала был создан. Используйте #{alias_word} в вк-боте, '
-                           f'чтобы слать сюда сообщения.')
-    except IntegrityError:
-        await context.send(f'Подобный алиас уже существует. Используйте {context.prefix}removealias')
-
-
-@discord_bot.command()
-async def removealias(context: commands.Context, alias_word):
-    try:
-        await db_helpers.delete_alias(context.guild.id, alias_word)
-    except IndexError:
-        await context.send(f'Алиас не найден')
-    else:
-        await context.send(f'Алиас {alias_word} успешно удален')
-
-
-@discord_bot.command()
-async def setdefault(context: commands.Context):
-    await db_helpers.set_default_channel(server_id=context.guild.id, channel_id=context.channel.id)
-    await context.send(f'Текущий канал установлен как канал по умолчанию')
-
-
-@discord_bot.command()
-async def setart(context: commands.Context):
-    await db_helpers.set_default_image_channel(server_id=context.guild.id, channel_id=context.channel.id)
-    await context.send(f'Текущий канал установлен как канал по умолчанию для изображений')
-
-
-@discord_bot.command()
-async def setduplex(context: commands.Context):
-    await db_helpers.set_duplex_channel(server_id=context.guild.id, channel_id=context.channel.id)
-    await context.send(f'Текущий канал установлен как дуплексный канал')
 
 
 @vk_bot.on.chat_message(text='/start')
