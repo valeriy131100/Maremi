@@ -25,7 +25,10 @@ temp = {
 async def make_embed(vk_message: vkbottle.bot.Message, text=None):
     user = await vk_message.get_user(fields=['photo_50'])
     timestamp = datetime.utcfromtimestamp(vk_message.date)
-    embed_message = discord.Embed(description=text, timestamp=timestamp)
+    if text:
+        embed_message = discord.Embed(description=text, timestamp=timestamp)
+    else:
+        embed_message = discord.Embed(description=text)
 
     user_nickname = await db_helpers.get_vk_nickname(user.id)
     if user_nickname:
