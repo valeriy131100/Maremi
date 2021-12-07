@@ -6,6 +6,7 @@ from pathlib import Path
 from vkbottle_types.objects import PhotosPhotoSizesType
 
 import asyncio
+from datetime import datetime
 from config import vk_token, discord_token, db_file
 import db_helpers
 from vk_utils import get_random_id
@@ -21,6 +22,26 @@ temp = {
 }
 
 
+async def make_embed(vk_message: vkbottle.bot.Message, text=None):
+    user = await vk_message.get_user(fields=['photo_50'])
+    timestamp = datetime.utcfromtimestamp(vk_message.date)
+    embed_message = discord.Embed(description=text, timestamp=timestamp)
+
+    user_nickname = await db_helpers.get_vk_nickname(user.id)
+    if user_nickname:
+        embed_message.set_author(
+            name=f'{user_nickname} ({user.first_name} {user.last_name})',
+            icon_url=f'{user.photo_50}'
+        )
+    else:
+        embed_message.set_author(
+            name=f'{user.first_name} {user.last_name}',
+            icon_url=f'{user.photo_50}'
+        )
+
+    return embed_message
+
+
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None, embed=True):
     channel = discord_bot.get_channel(id=channel_id)
     text = vk_message.text
@@ -29,39 +50,34 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
             text = text.replace(s, s_replace)
             if not text:
                 break
-    if text:
-        if embed:
-            user = await vk_message.get_user(fields=['photo_50'])
-            embed_message = discord.Embed(description=vk_message.text)
-            user_nickname = await db_helpers.get_vk_nickname(user.id)
-            if user_nickname:
-                embed_message.set_author(
-                    name=f'{user_nickname} ({user.first_name} {user.last_name})',
-                    icon_url=f'{user.photo_50}'
-                )
-            else:
-                embed_message.set_author(
-                    name=f'{user.first_name} {user.last_name}',
-                    icon_url=f'{user.photo_50}'
-                )
-            if vk_message.attachments:
-                for attachment in vk_message.attachments:
-                    if photo := attachment.photo:
-                        for size in photo.sizes:
-                            if size.type == PhotosPhotoSizesType.Z:
-                                embed_message.set_image(url=size.url)
-                        break
-            await channel.send(embed=embed_message)
-            return
-        else:
-            await channel.send(text)
 
-    if vk_message.attachments:
-        for attachment in vk_message.attachments:
-            if photo := attachment.photo:
-                for size in photo.sizes:
-                    if size.type == PhotosPhotoSizesType.Z:
-                        await channel.send(size.url)
+    if embed:
+        if vk_message.attachments:
+            first_embed = True
+            for attachment in vk_message.attachments:
+                if photo := attachment.photo:
+                    for size in photo.sizes:
+                        if size.type == PhotosPhotoSizesType.Z:
+                            if first_embed:
+                                embed_message = await make_embed(vk_message, text)
+                                embed_message.set_image(url=size.url)
+                                first_embed = False
+                                await channel.send(embed=embed_message)
+                            else:
+                                photo_embed = await make_embed(vk_message)
+                                photo_embed.set_image(url=size.url)
+                                await channel.send(embed=photo_embed)
+        else:
+            embed_message = await make_embed(vk_message, text)
+            await channel.send(embed=embed_message)
+    else:
+        await channel.send(text)
+        if vk_message.attachments:
+            for attachment in vk_message.attachments:
+                if photo := attachment.photo:
+                    for size in photo.sizes:
+                        if size.type == PhotosPhotoSizesType.Z:
+                            await channel.send(size.url)
 
 
 async def send_to_vk(chat_id, discord_message: discord.Message):
