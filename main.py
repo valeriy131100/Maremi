@@ -99,11 +99,11 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
 
 @discord_bot.event
 async def on_message(message: discord.Message):
-    if await db_helpers.is_duplex_channel(message.guild.id, message.channel.id):
-        if not message.author == discord_bot.user:
-            if not message.content.startswith(discord_bot.command_prefix):
-                chat_id = await db_helpers.get_server_chat(message.guild.id)
-                await send_to_vk(chat_id, message)
+    if ((await db_helpers.is_duplex_channel(message.guild.id, message.channel.id))
+            and not message.author == discord_bot.user
+            and not message.content.startswith(discord_bot.command_prefix)):
+        chat_id = await db_helpers.get_server_chat(message.guild.id)
+        await send_to_vk(chat_id, message)
     else:
         await discord_bot.process_commands(message)
 
