@@ -190,7 +190,7 @@ async def make_online(message: vkbottle.bot.Message):
 
 
 @vk_bot.on.chat_message(text='/makeoffline')
-async def make_online(message: vkbottle.bot.Message):
+async def make_offline(message: vkbottle.bot.Message):
     temp['chats'][message.chat_id] = False
     await message.answer(f'К чату теперь нельзя подключиться')
 
