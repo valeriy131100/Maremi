@@ -1,5 +1,6 @@
 import discord
 import vkbottle.bot
+import aiofiles
 from discord.ext import commands
 from aiosqlite import IntegrityError
 from pathlib import Path
@@ -12,7 +13,7 @@ import db_helpers
 from vk_utils import get_random_id, get_photo_max_size
 
 vk_bot = vkbottle.bot.Bot(vk_token)
-discord_bot = commands.Bot(command_prefix='m.')
+discord_bot = commands.Bot(command_prefix='m.', help_command=None)
 
 
 temp = {
@@ -107,6 +108,13 @@ async def on_message(message: discord.Message):
         await discord_bot.process_commands(message)
 
 
+@discord_bot.command(name='help')
+async def help_(context: commands.Context):
+    async with aiofiles.open('discord_help_message.txt', mode='r', encoding='utf-8') as help_file:
+        help_text = await help_file.read()
+        await context.send(help_text)
+
+
 @discord_bot.command()
 async def start(context: commands.Context):
     await context.send(f'Привет! channel_id={context.channel.id}')
@@ -195,6 +203,13 @@ async def connect(context: commands.Context, chat_id):
 @vk_bot.on.chat_message(text='/start')
 async def start(message: vkbottle.bot.Message):
     await message.answer(f'Привет. chat_id={message.chat_id}')
+
+
+@vk_bot.on.chat_message(text='/help')
+async def help_(message: vkbottle.bot.Message):
+    async with aiofiles.open('vk_help_message.txt', mode='r', encoding='utf-8') as help_file:
+        help_text = await help_file.read()
+        await message.answer(help_text)
 
 
 @vk_bot.on.chat_message(text='/makeonline')
