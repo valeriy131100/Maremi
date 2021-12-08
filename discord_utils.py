@@ -20,5 +20,5 @@ async def download_file(url, filename):
 async def download_emoji(emoji_id, guild_id):
     url = EMOJI_URL_TEMPLATE.format(emoji_id=emoji_id)
     filename = f'{guild_id}_{emoji_id}.png'
-    return download_file(url, filename)
+    return await download_file(url, filename)
 
