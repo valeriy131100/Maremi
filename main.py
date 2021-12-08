@@ -120,6 +120,25 @@ async def start(context: commands.Context):
     await context.send(f'Привет! channel_id={context.channel.id}')
 
 
+@discord_bot.command()
+async def split(context: commands.Context):
+    if ref := context.message.reference:
+        ref_message = await context.channel.fetch_message(ref.message_id)
+        if attaches := ref_message.attachments:
+            for attach in attaches:
+                embed = discord.Embed()
+                embed.set_author(
+                    name=ref_message.author.display_name,
+                    icon_url=ref_message.author.avatar_url
+                )
+                embed.set_image(url=attach)
+                await context.send(embed=embed)
+        await ref_message.delete()
+        await context.message.delete()
+    else:
+        await context.send('Пожалуйста, ответьте на сообщение, которое хотите разделить')
+
+
 @discord_bot.group(pass_context=True)
 async def make(context: commands.Context):
     pass
