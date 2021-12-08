@@ -72,6 +72,14 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
                         photo_embed = await make_embed(vk_message)
                         photo_embed.set_image(url=photo_size.url)
                         await channel.send(embed=photo_embed)
+                elif sticker := attachment.sticker:
+                    for size in sticker.images:
+                        if size.width == 128:
+                            size_128 = size
+                    embed_message = await make_embed(vk_message, text)
+                    embed_message.set_image(url=size_128.url)
+                    await channel.send(embed=embed_message)
+                    return
         else:
             embed_message = await make_embed(vk_message, text)
             await channel.send(embed=embed_message)
