@@ -5,6 +5,8 @@ from discord.ext import commands
 from aiosqlite import IntegrityError
 from pathlib import Path
 from vkbottle_types.objects import PhotosPhotoSizesType
+from vkbottle import PhotoMessageUploader
+from discord_utils import EMOJI_REGEX, download_emoji, download_file
 
 import asyncio
 from datetime import datetime
@@ -85,16 +87,35 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
 
 async def send_to_vk(chat_id, discord_message: discord.Message):
     nickname = await db_helpers.get_discord_nickname(discord_message.author.id)
+    message_text = discord_message.content
+    photo_uploader = PhotoMessageUploader(api=vk_bot.api)
+    attachments_list = []
+
+    for full_emoji, is_animated, emoji_id in EMOJI_REGEX.findall(message_text):
+        message_text = message_text.replace(full_emoji, '')
+        emoji_file = await download_emoji(emoji_id=emoji_id, guild_id=discord_message.guild.id)
+        attach = await photo_uploader.upload(file_source=emoji_file)
+        attachments_list.append(attach)
+        if len(attachments_list) == 10:
+            break
+
     if nickname:
         author_string = f'{nickname} ({discord_message.author}):'
     else:
         author_string = f'{discord_message.author}:'
-    message_text = f'{author_string}\n{discord_message.content}'
+    message_text = f'{author_string}\n{message_text}'
 
     if attaches := discord_message.attachments:
         for attach in attaches:
-            message_text += f'\n{attach.url}'
-    await vk_bot.api.messages.send(chat_id=chat_id, message=message_text, random_id=get_random_id())
+            if attach.content_type.startswith('image') and len(attachments_list) != 10:
+                image_file = await download_file(url=attach.url, filename=attach.filename)
+                attach = await photo_uploader.upload(file_source=image_file)
+                attachments_list.append(attach)
+
+    attachments = ','.join(attachments_list)
+
+    await vk_bot.api.messages.send(chat_id=chat_id, message=message_text, random_id=get_random_id(),
+                                   attachment=attachments)
 
 
 @discord_bot.event
@@ -286,7 +307,6 @@ async def remove_nickname(message: vkbottle.bot.Message):
 @vk_bot.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: not message.text.startswith(('/', '#'))))
 async def duplex_chat(message: vkbottle.bot.Message):
     duplex_channel = await db_helpers.get_chat_duplex_channel(message.chat_id)
-    print(duplex_channel)
     if duplex_channel:
         await send_to_discord(duplex_channel, message)
 
