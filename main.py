@@ -145,8 +145,14 @@ async def split(context: commands.Context):
     if ref := context.message.reference:
         ref_message = await context.channel.fetch_message(ref.message_id)
         if attaches := ref_message.attachments:
+            first_embed = True
             for attach in attaches:
-                embed = discord.Embed()
+                if not first_embed:
+                    embed = discord.Embed()
+                else:
+                    embed = discord.Embed(description=ref_message.content)
+                    first_embed = False
+
                 embed.set_author(
                     name=ref_message.author.display_name,
                     icon_url=ref_message.author.avatar_url
