@@ -48,7 +48,7 @@ async def make_embed(vk_message: vkbottle.bot.Message, text=None):
     return embed_message
 
 
-async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None, embed=True):
+async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None):
     channel = discord_bot.get_channel(id=channel_id)
     text = vk_message.text
     if text_replace:
@@ -57,40 +57,31 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
             if not text:
                 break
 
-    if embed:
-        if vk_message.attachments:
-            first_embed = True
-            for attachment in vk_message.attachments:
-                if photo := attachment.photo:
-                    photo_size = get_photo_max_size(photo.sizes)
-                    if first_embed:
-                        embed_message = await make_embed(vk_message, text)
-                        embed_message.set_image(url=photo_size.url)
-                        first_embed = False
-                        await channel.send(embed=embed_message)
-                    else:
-                        photo_embed = await make_embed(vk_message)
-                        photo_embed.set_image(url=photo_size.url)
-                        await channel.send(embed=photo_embed)
-                elif sticker := attachment.sticker:
-                    for size in sticker.images:
-                        if size.width == 128:
-                            size_128 = size
+    if vk_message.attachments:
+        first_embed = True
+        for attachment in vk_message.attachments:
+            if photo := attachment.photo:
+                photo_size = get_photo_max_size(photo.sizes)
+                if first_embed:
                     embed_message = await make_embed(vk_message, text)
-                    embed_message.set_image(url=size_128.url)
+                    embed_message.set_image(url=photo_size.url)
+                    first_embed = False
                     await channel.send(embed=embed_message)
-                    return
-        else:
-            embed_message = await make_embed(vk_message, text)
-            await channel.send(embed=embed_message)
+                else:
+                    photo_embed = await make_embed(vk_message)
+                    photo_embed.set_image(url=photo_size.url)
+                    await channel.send(embed=photo_embed)
+            elif sticker := attachment.sticker:
+                for size in sticker.images:
+                    if size.width == 128:
+                        size_128 = size
+                embed_message = await make_embed(vk_message, text)
+                embed_message.set_image(url=size_128.url)
+                await channel.send(embed=embed_message)
+                return
     else:
-        await channel.send(text)
-        if vk_message.attachments:
-            for attachment in vk_message.attachments:
-                if photo := attachment.photo:
-                    for size in photo.sizes:
-                        if size.type == PhotosPhotoSizesType.Z:
-                            await channel.send(size.url)
+        embed_message = await make_embed(vk_message, text)
+        await channel.send(embed=embed_message)
 
 
 async def send_to_vk(chat_id, discord_message: discord.Message):
