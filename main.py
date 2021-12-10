@@ -147,10 +147,11 @@ async def split(context: commands.Context):
         if attaches := ref_message.attachments:
             first_embed = True
             for attach in attaches:
+                timestamp = ref_message.created_at
                 if not first_embed:
-                    embed = discord.Embed()
+                    embed = discord.Embed(timestamp=timestamp)
                 else:
-                    embed = discord.Embed(description=ref_message.content)
+                    embed = discord.Embed(description=ref_message.content, timestamp=timestamp)
                     first_embed = False
 
                 embed.set_author(
