@@ -1,4 +1,5 @@
 import discord
+import dislash
 import vkbottle.bot
 import aiofiles
 from discord.ext import commands
@@ -16,6 +17,7 @@ from vk_utils import get_random_id, get_photo_max_size
 
 vk_bot = vkbottle.bot.Bot(vk_token)
 discord_bot = commands.Bot(command_prefix='m.', help_command=None)
+inter_discord_bot = dislash.InteractionClient(discord_bot)
 
 
 temp = {
@@ -24,7 +26,10 @@ temp = {
     },
     'webhooks': [
         # webhooks_ids
-    ]
+    ],
+    'galleries': {
+        # gallery_id: attachment_objects
+    },
 }
 
 
@@ -146,6 +151,12 @@ async def on_message(message: discord.Message):
         await discord_bot.process_commands(message)
 
 
+@discord_bot.listen()
+async def on_button_click(interaction):
+    if interaction.button.custom_id.startswith('gallery'):
+        await handle_gallery_button(interaction)
+
+
 @discord_bot.command(name='help')
 async def help_(context: commands.Context):
     async with aiofiles.open('discord_help_message.txt', mode='r', encoding='utf-8') as help_file:
@@ -208,6 +219,57 @@ async def set_alias(context: commands.Context, alias_word):
                            f'чтобы слать сюда сообщения.')
     except IntegrityError:
         await context.send(f'Подобный алиас уже существует. Используйте {context.prefix}removealias')
+
+
+@make.command(name='gallery')
+async def make_gallery(context: commands.Context):
+    message = context.message
+    temp['galleries'][message.id] = message.attachments
+    embed, components = await get_gallery_message(0, message.id)
+    await context.send(embed=embed, components=components)
+
+
+async def get_gallery_message(attachment_id, gallery_id):
+    attachments = temp['galleries'][gallery_id]
+    row_of_buttons = dislash.ActionRow(
+        dislash.Button(
+            style=dislash.ButtonStyle.primary,
+            label="Previous",
+            custom_id=f"gallery prev {attachment_id} {gallery_id}"
+        ),
+        dislash.Button(
+            style=dislash.ButtonStyle.primary,
+            label="Next",
+            custom_id=f"gallery next {attachment_id} {gallery_id}"
+        )
+    )
+
+    embed = discord.Embed()
+    embed.set_image(url=attachments[attachment_id].url)
+    components = [row_of_buttons]
+
+    return embed, components
+
+
+async def handle_gallery_button(interaction: dislash.MessageInteraction):
+    payload = interaction.button.custom_id
+    _, command, attachment_id, gallery_id = payload.split()
+    attachment_id = int(attachment_id)
+    gallery_id = int(gallery_id)
+    attachments = temp['galleries'][gallery_id]
+    if command == 'next':
+        if attachment_id == len(attachments) - 1:
+            attachment_id = 0
+        else:
+            attachment_id += 1
+    elif command == 'prev':
+        if attachment_id == 0:
+            attachment_id = len(attachments)
+        else:
+            attachment_id -= 1
+
+    embed, components = await get_gallery_message(attachment_id, gallery_id)
+    await interaction.message.edit(embed=embed, components=components)
 
 
 @discord_bot.group(pass_context=True, name='set')
