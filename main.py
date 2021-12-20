@@ -145,23 +145,33 @@ async def split(context: commands.Context):
     if ref := context.message.reference:
         ref_message = await context.channel.fetch_message(ref.message_id)
         if attaches := ref_message.attachments:
+            author_name = ref_message.author.display_name
+            author_avatar = ref_message.author.avatar_url
+            webhook = await context.channel.create_webhook(name=author_name)
             first_embed = True
             for attach in attaches:
                 timestamp = ref_message.created_at
-                if not first_embed:
-                    embed = discord.Embed(timestamp=timestamp)
-                else:
-                    embed = discord.Embed(description=ref_message.content, timestamp=timestamp)
-                    first_embed = False
-
-                embed.set_author(
-                    name=ref_message.author.display_name,
-                    icon_url=ref_message.author.avatar_url
-                )
+                embed = discord.Embed(timestamp=timestamp)
                 embed.set_image(url=attach)
-                await context.send(embed=embed)
-        await ref_message.delete()
-        await context.message.delete()
+                if first_embed:
+                    await webhook.send(
+                        ref_message.content,
+                        embed=embed,
+                        username=author_name,
+                        avatar_url=author_avatar
+                    )
+                    first_embed = False
+                else:
+                    await webhook.send(
+                        embed=embed,
+                        username=author_name,
+                        avatar_url=author_avatar
+                    )
+            await webhook.delete()
+            await ref_message.delete()
+            await context.message.delete()
+        else:
+            await context.send('Оригинальное сообщение не содержит изображений')
     else:
         await context.send('Пожалуйста, ответьте на сообщение, которое хотите разделить')
 
