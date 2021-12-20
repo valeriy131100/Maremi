@@ -21,31 +21,34 @@ discord_bot = commands.Bot(command_prefix='m.', help_command=None)
 temp = {
     'chats': {
         # dict vk_chat_id: on/off bool
-    }
+    },
+    'webhooks': [
+        # webhooks_ids
+    ]
 }
 
 
 async def make_embed(vk_message: vkbottle.bot.Message, text=None):
-    user = await vk_message.get_user(fields=['photo_50'])
     timestamp = datetime.utcfromtimestamp(vk_message.date)
     if text:
         embed_message = discord.Embed(description=text, timestamp=timestamp)
     else:
         embed_message = discord.Embed(timestamp=timestamp)
 
+    return embed_message
+
+
+async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
+    user = await vk_message.get_user(fields=['photo_50'])
     user_nickname = await db_helpers.get_vk_nickname(user.id)
     if user_nickname:
-        embed_message.set_author(
-            name=f'{user_nickname} ({user.first_name} {user.last_name})',
-            icon_url=f'{user.photo_50}'
-        )
+        username = f'{user_nickname} ({user.first_name} {user.last_name})'
     else:
-        embed_message.set_author(
-            name=f'{user.first_name} {user.last_name}',
-            icon_url=f'{user.photo_50}'
-        )
+        username = f'{user.first_name} {user.last_name}'
 
-    return embed_message
+    avatar_url = f'{user.photo_50}'
+
+    return username, avatar_url
 
 
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None):
@@ -57,31 +60,45 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
             if not text:
                 break
 
+    username, avatar_url = await get_user_info_from_vk_message(vk_message)
+    webhook = await channel.create_webhook(name=username)
+    temp['webhooks'].append(webhook.id)
+
     if vk_message.attachments:
         first_embed = True
         for attachment in vk_message.attachments:
             if photo := attachment.photo:
                 photo_size = get_photo_max_size(photo.sizes)
                 if first_embed:
-                    embed_message = await make_embed(vk_message, text)
+                    embed_message = await make_embed(vk_message)
                     embed_message.set_image(url=photo_size.url)
                     first_embed = False
-                    await channel.send(embed=embed_message)
+                    await webhook.send(
+                        text,
+                        embed=embed_message,
+                        avatar_url=avatar_url,
+                        username=username
+                    )
                 else:
                     photo_embed = await make_embed(vk_message)
                     photo_embed.set_image(url=photo_size.url)
-                    await channel.send(embed=photo_embed)
+                    await webhook.send(
+                        embed=photo_embed,
+                        avatar_url=avatar_url,
+                        username=username
+                    )
             elif sticker := attachment.sticker:
                 for size in sticker.images:
                     if size.width == 128:
                         size_128 = size
                 embed_message = await make_embed(vk_message, text)
                 embed_message.set_image(url=size_128.url)
-                await channel.send(embed=embed_message)
+                await webhook.send(embed=embed_message, avatar_url=avatar_url, username=username)
                 return
     else:
-        embed_message = await make_embed(vk_message, text)
-        await channel.send(embed=embed_message)
+        await webhook.send(text, avatar_url=avatar_url, username=username)
+
+    await webhook.delete()
 
 
 async def send_to_vk(chat_id, discord_message: discord.Message):
@@ -121,7 +138,8 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
 async def on_message(message: discord.Message):
     if ((await db_helpers.is_duplex_channel(message.guild.id, message.channel.id))
             and not message.author == discord_bot.user
-            and not message.content.startswith(discord_bot.command_prefix)):
+            and not message.content.startswith(discord_bot.command_prefix)
+            and message.webhook_id not in temp['webhooks']):
         chat_id = await db_helpers.get_server_chat(message.guild.id)
         await send_to_vk(chat_id, message)
     else:
@@ -148,6 +166,7 @@ async def split(context: commands.Context):
             author_name = ref_message.author.display_name
             author_avatar = ref_message.author.avatar_url
             webhook = await context.channel.create_webhook(name=author_name)
+            temp['webhooks'].append(webhook.id)
             first_embed = True
             for attach in attaches:
                 timestamp = ref_message.created_at
