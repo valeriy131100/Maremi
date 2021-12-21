@@ -4,7 +4,6 @@ import aiofiles
 from disnake.ext import commands
 from aiosqlite import IntegrityError
 from pathlib import Path
-from vkbottle_types.objects import PhotosPhotoSizesType
 from vkbottle import PhotoMessageUploader
 from discord_utils import EMOJI_REGEX, download_emoji, download_file
 
