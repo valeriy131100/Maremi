@@ -10,6 +10,7 @@ from vkbottle import PhotoMessageUploader
 from discord_utils import EMOJI_REGEX, download_emoji, download_file
 
 import asyncio
+import os
 from datetime import datetime
 from config import vk_token, discord_token, db_file
 import db_helpers
@@ -116,6 +117,7 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
         message_text = message_text.replace(full_emoji, '')
         emoji_file = await download_emoji(emoji_id=emoji_id, guild_id=discord_message.guild.id)
         attach = await photo_uploader.upload(file_source=emoji_file)
+        os.remove(emoji_file)
         attachments_list.append(attach)
         if len(attachments_list) == 10:
             break
@@ -131,6 +133,7 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
             if attach.content_type.startswith('image') and len(attachments_list) != 10:
                 image_file = await download_file(url=attach.url, filename=attach.filename)
                 attach = await photo_uploader.upload(file_source=image_file)
+                os.remove(image_file)
                 attachments_list.append(attach)
 
     attachments = ','.join(attachments_list)
