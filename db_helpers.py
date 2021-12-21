@@ -245,3 +245,38 @@ async def get_discord_nickname(discord_id):
         if result:
             return result[0]
 
+
+async def create_gallery(images_urls):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+
+        await cur.execute(
+            'SELECT max(gallery_id) FROM GalleryToImage'
+        )
+
+        result = await cur.fetchone()
+        if result[0] is None:
+            gallery_id = 0
+        else:
+            gallery_id = result[0] + 1
+
+        for image_url in images_urls:
+            await cur.execute(
+                'INSERT INTO GalleryToImage (gallery_id, image_url) VALUES (?, ?)',
+                (gallery_id, image_url)
+            )
+        await db.commit()
+
+        return gallery_id
+
+
+async def get_gallery_images(gallery_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT image_url FROM GalleryToImage WHERE gallery_id=? ORDER BY rowid',
+            (gallery_id,)
+        )
+        result = await cur.fetchall()
+        images = [row[0] for row in result]
+        return images

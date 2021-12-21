@@ -1,7 +1,6 @@
 vkbottle~=3.0.2
 environs~=9.3.5
-discord.py~=1.7.3
-dislash.py~=1.4.9
 aiosqlite~=0.17.0
 aiofiles~=0.8.0
 aiohttp~=3.7.4.post0
+disnake~=2.2.2

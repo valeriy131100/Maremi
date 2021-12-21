@@ -32,3 +32,7 @@ CREATE TABLE "DiscordNickName" (
 	PRIMARY KEY("discord_id")
 );
 
+CREATE TABLE "GalleryToImage" (
+	"gallery_id"	INTEGER NOT NULL,
+	"image_url"	TEXT NOT NULL
+);

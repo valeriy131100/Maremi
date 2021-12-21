@@ -1,8 +1,7 @@
-import discord
-import dislash
+import disnake as discord
 import vkbottle.bot
 import aiofiles
-from discord.ext import commands
+from disnake.ext import commands
 from aiosqlite import IntegrityError
 from pathlib import Path
 from vkbottle_types.objects import PhotosPhotoSizesType
@@ -18,7 +17,6 @@ from vk_utils import get_random_id, get_photo_max_size
 
 vk_bot = vkbottle.bot.Bot(vk_token)
 discord_bot = commands.Bot(command_prefix='m.', help_command=None)
-inter_discord_bot = dislash.InteractionClient(discord_bot)
 
 
 temp = {
@@ -28,9 +26,6 @@ temp = {
     'webhooks': [
         # webhooks_ids
     ],
-    'galleries': {
-        # gallery_id: attachment_objects
-    },
 }
 
 
@@ -156,7 +151,7 @@ async def on_message(message: discord.Message):
 
 @discord_bot.listen()
 async def on_button_click(interaction):
-    if interaction.button.custom_id.startswith('gallery'):
+    if interaction.component.custom_id.startswith('gallery'):
         await handle_gallery_button(interaction)
 
 
@@ -227,39 +222,44 @@ async def set_alias(context: commands.Context, alias_word):
 @make.command(name='gallery')
 async def make_gallery(context: commands.Context):
     message = context.message
-    temp['galleries'][message.id] = message.attachments
-    embed, components = await get_gallery_message(0, message.id)
-    await context.send(embed=embed, components=components)
+    gallery_id = await db_helpers.create_gallery(
+        [attachment.url for attachment in message.attachments]
+    )
+    embed, buttons = await get_gallery_message(0, gallery_id)
+    await context.send(embed=embed, view=buttons)
 
 
 async def get_gallery_message(attachment_id, gallery_id):
-    attachments = temp['galleries'][gallery_id]
-    row_of_buttons = dislash.ActionRow(
-        dislash.Button(
-            style=dislash.ButtonStyle.primary,
+    attachments = await db_helpers.get_gallery_images(gallery_id)
+    buttons = discord.ui.View()
+    buttons.add_item(
+        discord.ui.Button(
+            style=discord.ButtonStyle.primary,
             label="Previous",
             custom_id=f"gallery prev {attachment_id} {gallery_id}"
-        ),
-        dislash.Button(
-            style=dislash.ButtonStyle.primary,
+        )
+    )
+    buttons.add_item(
+        discord.ui.Button(
+            style=discord.ButtonStyle.primary,
             label="Next",
             custom_id=f"gallery next {attachment_id} {gallery_id}"
         )
     )
 
     embed = discord.Embed()
-    embed.set_image(url=attachments[attachment_id].url)
-    components = [row_of_buttons]
+    embed.set_image(url=attachments[attachment_id])
 
-    return embed, components
+    return embed, buttons
 
 
-async def handle_gallery_button(interaction: dislash.MessageInteraction):
-    payload = interaction.button.custom_id
+async def handle_gallery_button(interaction: discord.MessageInteraction):
+    payload = interaction.component.custom_id
     _, command, attachment_id, gallery_id = payload.split()
     attachment_id = int(attachment_id)
     gallery_id = int(gallery_id)
-    attachments = temp['galleries'][gallery_id]
+    attachments = await db_helpers.get_gallery_images(gallery_id)
+
     if command == 'next':
         if attachment_id == len(attachments) - 1:
             attachment_id = 0
@@ -267,12 +267,12 @@ async def handle_gallery_button(interaction: dislash.MessageInteraction):
             attachment_id += 1
     elif command == 'prev':
         if attachment_id == 0:
-            attachment_id = len(attachments)
+            attachment_id = len(attachments) - 1
         else:
             attachment_id -= 1
 
-    embed, components = await get_gallery_message(attachment_id, gallery_id)
-    await interaction.message.edit(embed=embed, components=components)
+    embed, buttons = await get_gallery_message(attachment_id, gallery_id)
+    await interaction.response.edit_message(embed=embed, view=buttons)
 
 
 @discord_bot.group(pass_context=True, name='set')
