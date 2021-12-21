@@ -1,5 +1,5 @@
 # Maremi
-Простой бот для синхронизации vk чата и discord сервера. Использует discord.py, vkbottle и aiosqlite.
+Простой бот для синхронизации vk чата и discord сервера. Использует disnake, vkbottle и aiosqlite.
 
 # Установка
 Вам понадобится установленный Python 3.9 и git.
