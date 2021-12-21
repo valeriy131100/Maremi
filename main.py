@@ -172,7 +172,7 @@ async def split(context: commands.Context):
         ref_message = await context.channel.fetch_message(ref.message_id)
         if attaches := ref_message.attachments:
             author_name = ref_message.author.display_name
-            author_avatar = ref_message.author.avatar_url
+            author_avatar = ref_message.author.avatar.url
             webhook = await context.channel.create_webhook(name=author_name)
             temp['webhooks'].append(webhook.id)
             first_embed = True
