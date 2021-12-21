@@ -179,7 +179,7 @@ async def split(context: commands.Context):
             for attach in attaches:
                 timestamp = ref_message.created_at
                 embed = discord.Embed(timestamp=timestamp)
-                embed.set_image(url=attach)
+                embed.set_image(url=attach.url)
                 if first_embed:
                     await webhook.send(
                         ref_message.content,
@@ -388,7 +388,6 @@ async def alias_send(message: vkbottle.bot.Message):
     aliases = await db_helpers.get_aliases(chat_id=message.chat_id)
     for alias in aliases:
         if message.text.startswith(f'#{alias}'):
-            text = message.text.replace(f'#{alias}', '')
             channel_id = await db_helpers.get_channel_by_alias(alias, chat_id=message.chat_id)
             await send_to_discord(channel_id, message, {f'#{alias} ': '', f'#{alias}': ''})
             return
@@ -430,4 +429,3 @@ if __name__ == '__main__':
             vk_bot.run_polling()
         )
     )
-
