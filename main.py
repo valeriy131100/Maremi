@@ -220,11 +220,19 @@ async def set_alias(context: commands.Context, alias_word):
 
 @make.command(name='gallery')
 async def make_gallery(context: commands.Context):
-    message = context.message
+    original_message = None
+    if ref := context.message.reference:
+        message = await context.channel.fetch_message(ref.message_id)
+        original_message = context.message
+    else:
+        message = context.message
     gallery_id = await db_helpers.create_gallery(
         [attachment.url for attachment in message.attachments]
     )
     embed, buttons = await get_gallery_message(0, gallery_id)
+    await message.delete()
+    if original_message:
+        await original_message.delete()
     await context.send(embed=embed, view=buttons)
 
 
