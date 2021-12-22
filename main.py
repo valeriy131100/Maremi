@@ -1,5 +1,3 @@
-import time
-
 import disnake as discord
 import vkbottle.bot
 import aiofiles
