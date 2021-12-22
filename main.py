@@ -278,8 +278,6 @@ async def get_gallery_message(attachment_id, gallery_id):
 async def handle_gallery_button(interaction: discord.MessageInteraction):
     payload = interaction.component.custom_id
     _, command, attachment_id, gallery_id = payload.split()
-    if command == 'num':
-        return
     attachment_id = int(attachment_id)
     gallery_id = int(gallery_id)
     attachments = await db_helpers.get_gallery_images(gallery_id)
