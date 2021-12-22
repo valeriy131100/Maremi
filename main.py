@@ -1,3 +1,5 @@
+import time
+
 import disnake as discord
 import vkbottle.bot
 import aiofiles
@@ -12,6 +14,7 @@ import os
 from datetime import datetime
 from config import vk_token, discord_token, db_file
 import db_helpers
+import freeimagehost
 from vk_utils import get_random_id, get_photo_max_size
 
 vk_bot = vkbottle.bot.Bot(vk_token)
@@ -226,14 +229,20 @@ async def make_gallery(context: commands.Context):
         original_message = context.message
     else:
         message = context.message
-    gallery_id = await db_helpers.create_gallery(
-        [attachment.url for attachment in message.attachments]
-    )
+    images_count = len(message.attachments)
+    gallery_images = []
+    gallery_message = await context.send(f'Загружаю {images_count} изображений')
+    for image_num, attachment in enumerate(message.attachments):
+        image = await freeimagehost.upload_and_get_url(attachment.url)
+        if image:
+            gallery_images.append(image)
+            await gallery_message.edit(content=f'Загружаю картинку {image_num+1} из {images_count}')
+    gallery_id = await db_helpers.create_gallery(gallery_images)
     embed, buttons = await get_gallery_message(0, gallery_id)
     await message.delete()
     if original_message:
         await original_message.delete()
-    await context.send(embed=embed, view=buttons)
+    await gallery_message.edit(content='', embed=embed, view=buttons)
 
 
 async def get_gallery_message(attachment_id, gallery_id):
@@ -242,14 +251,14 @@ async def get_gallery_message(attachment_id, gallery_id):
     buttons.add_item(
         discord.ui.Button(
             style=discord.ButtonStyle.primary,
-            label="Previous",
+            label="Назад",
             custom_id=f"gallery prev {attachment_id} {gallery_id}"
         )
     )
     buttons.add_item(
         discord.ui.Button(
             style=discord.ButtonStyle.primary,
-            label="Next",
+            label="Вперёд",
             custom_id=f"gallery next {attachment_id} {gallery_id}"
         )
     )
