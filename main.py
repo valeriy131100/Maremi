@@ -178,9 +178,11 @@ async def split(context: commands.Context):
             temp['webhooks'].append(webhook.id)
             first_embed = True
             for attach in attaches:
+                image_url = await freeimagehost.upload_and_get_url(attach.url)
                 timestamp = ref_message.created_at
                 embed = discord.Embed(timestamp=timestamp)
-                embed.set_image(url=attach.url)
+                embed.set_image(url=image_url)
+                embed.set_author(name=author_name, icon_url=author_avatar)
                 if first_embed:
                     await webhook.send(
                         ref_message.content,
