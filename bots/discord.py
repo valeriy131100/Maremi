@@ -45,8 +45,12 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
 
     attachments = ','.join(attachments_list)
     
-    await bots.vk_bot.api.messages.send(chat_id=chat_id, message=message_text, random_id=get_random_id(),
-                                   attachment=attachments)
+    await bots.vk_bot.api.messages.send(
+        chat_id=chat_id,
+        message=message_text,
+        random_id=get_random_id(),
+        attachment=attachments
+    )
 
 
 @discord_bot.event
