@@ -74,13 +74,10 @@ class ImageWorkingGalleries(commands.Cog):
         else:
             message = context.message
         images_count = len(message.attachments)
-        gallery_images = []
         gallery_message = await context.send(f'Загружаю {images_count} изображений')
-        for image_num, attachment in enumerate(message.attachments):
-            image = await freeimagehost.upload_and_get_url(attachment.url)
-            if image:
-                gallery_images.append(image)
-                await gallery_message.edit(content=f'Загружаю картинку {image_num + 1} из {images_count}')
+        gallery_images = await freeimagehost.multiple_upload_and_get_url(
+            [attachment.url for attachment in message.attachments]
+        )
         gallery_id = await db_helpers.create_gallery(gallery_images)
         embed, buttons = await get_gallery_message(0, gallery_id)
         await message.delete()
