@@ -14,7 +14,6 @@ async def _get_image_url(image_url, session):
     async with session.get(url, params=params) as response:
         if response.status == 200:
             image = await response.json()
-            print(image_url, 'uploaded')
             return image['image']['url']
 
 
