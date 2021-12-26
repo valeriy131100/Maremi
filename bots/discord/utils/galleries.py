@@ -4,7 +4,7 @@ import freeimagehost
 from disnake.ext import commands
 
 
-async def get_gallery_message(attachment_id, gallery_id):
+async def get_gallery_message(attachment_id, gallery_id, embed):
     attachments = await db_helpers.get_gallery_images(gallery_id)
     images_count = len(attachments)
     buttons = discord.ui.View()
@@ -28,18 +28,19 @@ async def get_gallery_message(attachment_id, gallery_id):
     buttons.add_item(num_button)
     buttons.add_item(next_button)
 
-    embed = discord.Embed()
     embed.set_image(url=attachments[attachment_id])
 
     return embed, buttons
 
 
-async def create_gallery(images, start_id=0):
+async def create_gallery(images, start_id=0, embed=None):
     gallery_images = await freeimagehost.multiple_upload_and_get_url(
         images
     )
     gallery_id = await db_helpers.create_gallery(gallery_images)
-    return await get_gallery_message(start_id, gallery_id)
+    if not embed:
+        embed = discord.Embed()
+    return await get_gallery_message(start_id, gallery_id, embed)
 
 
 class GalleriesHandler(commands.Cog):
@@ -66,7 +67,9 @@ class GalleriesHandler(commands.Cog):
                 else:
                     attachment_id -= 1
 
+            original_embed = interaction.message.embeds[0]
+
             embed, buttons = await get_gallery_message(
-                attachment_id, gallery_id
+                attachment_id, gallery_id, original_embed
             )
             await interaction.response.edit_message(embed=embed, view=buttons)
