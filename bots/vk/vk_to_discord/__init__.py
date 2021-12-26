@@ -26,7 +26,7 @@ async def send_art(message: vkbottle.bot.Message, cleared_text):
     await send_to_discord(channel_id)
 
 
-@bp.on.chat_message(AliasRule(prefix='#'))
+@bp.on.chat_message(AliasRule())
 async def alias_send(message: vkbottle.bot.Message, cleared_text, alias):
     channel_id = await db_helpers.get_channel_by_alias(
         alias, chat_id=message.chat_id
