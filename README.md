@@ -23,7 +23,10 @@ $ pip install -r requirements.txt
 # Использование
 Заполните файл .env.example и переименуйте его в .env или иным образом передайте переменные среды:
 * VK_TOKEN - токен для вк-бота
+* VK_PREFIX - префикс вк-бота
 * DISCORD_TOKEN - токен для дискорд-бота
+* DISCORD_PREFIX - префикс дискорд-бота
+* DATABASE - путь до базы данных SQLite
 * FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api)
 
 На сервере и в чате у ботов должен быть полный доступ к сообщениям. В будущем возможно понадобится администрирование.
