@@ -12,14 +12,14 @@ from bots.vk.utils import get_photo_max_size
 
 
 POST_URL_TEMPLATE = 'https://vk.com/wall{from_id}_{post_id}'
+FROM_USER_TEMPLATE = 'https://vk.com/id{from_id}'
+FROM_GROUP_TEMPLATE = 'https://vk.com/club{from_id}'
 
 
 async def make_embed(vk_message: vkbottle.bot.Message, text=None,
                      post: Optional[WallWallpostFull] = None):
     timestamp = datetime.utcfromtimestamp(vk_message.date)
     if post:
-        from_name, from_avatar = await get_from_info_from_wall_post(post)
-
         post_text = post.text
         if post_text and len(post_text) > 4096:
             post_text = f'{post.text[:4093]}...'
@@ -38,9 +38,14 @@ async def make_embed(vk_message: vkbottle.bot.Message, text=None,
             timestamp=post_timestamp
         )
 
+        from_name, from_avatar, from_url = (
+            await get_from_info_from_wall_post(post)
+        )
+
         embed_message.set_author(
             name=from_name,
-            icon_url=from_avatar
+            icon_url=from_avatar,
+            url=from_url
         )
 
         embed_message.add_field(
@@ -74,22 +79,22 @@ async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
 
 async def get_from_info_from_wall_post(post: WallWallpostFull):
     from_id = post.from_id
-    group_info = None
-    user_info = None
     if from_id < 0:
         group_info = await bots.vk_bot.api.groups.get_by_id(
             group_id=str(abs(from_id))
         )
         group_name = group_info[0].name
         group_avatar = group_info[0].photo_200
-        return group_name, group_avatar
+        group_url = FROM_GROUP_TEMPLATE.format(from_id=abs(post.from_id))
+        return group_name, group_avatar, group_url
     else:
         user_info = await bots.vk_bot.api.users.get(
             user_ids=[from_id], fields=['photo_200']
         )
         user_name = f'{user_info[0].first_name} {user_info[0].last_name}'
         user_avatar = user_info[0].photo_200
-        return user_name, user_avatar
+        user_url = FROM_USER_TEMPLATE.format(from_id=post.from_id)
+        return user_name, user_avatar, user_url
 
 
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None):
