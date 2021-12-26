@@ -1,6 +1,6 @@
-vkbottle~=3.0.2
+vkbottle~=4.1.5
 environs~=9.3.5
 aiosqlite~=0.17.0
 aiofiles~=0.8.0
-aiohttp~=3.7.4.post0
-disnake~=2.2.2
+aiohttp~=3.8.1
+disnake~=2.3.0
