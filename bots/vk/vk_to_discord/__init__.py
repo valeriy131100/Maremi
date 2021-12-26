@@ -4,36 +4,39 @@ from .converter import send_to_discord
 from vkbottle.bot import Blueprint
 from .connect import bp as connect_bp
 from .user_settings import bp as user_bp
+from bots.vk.custom_rules import StartsWithRule, AliasRule, NotStartsWithRule
 
 bp = Blueprint('send_to_discord')
 bp.child_bps = [connect_bp, user_bp]
 
 
-@bp.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/send')))
-async def send(message: vkbottle.bot.Message):
+@bp.on.chat_message(StartsWithRule('send'))
+async def send(message: vkbottle.bot.Message, cleared_text):
     channel_id = await db_helpers.get_default_channel(chat_id=message.chat_id)
-    await send_to_discord(channel_id, message, text_replace={'/send ': '', '/send': ''})
+    message.text = cleared_text
+    await send_to_discord(channel_id, message)
 
 
-@bp.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('/art')))
-async def send_art(message: vkbottle.bot.Message):
-    channel_id = await db_helpers.get_default_image_channel(chat_id=message.chat_id)
-    await send_to_discord(channel_id, message, text_replace={'/art ': '', '/art': ''})
+@bp.on.chat_message(StartsWithRule('art'))
+async def send_art(message: vkbottle.bot.Message, cleared_text):
+    channel_id = await db_helpers.get_default_image_channel(
+        chat_id=message.chat_id
+    )
+    message.text = cleared_text
+    await send_to_discord(channel_id)
 
 
-@bp.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: message.text.startswith('#')))
-async def alias_send(message: vkbottle.bot.Message):
-    aliases = await db_helpers.get_aliases(chat_id=message.chat_id)
-    for alias in aliases:
-        if message.text.startswith(f'#{alias}'):
-            channel_id = await db_helpers.get_channel_by_alias(alias, chat_id=message.chat_id)
-            await send_to_discord(channel_id, message, {f'#{alias} ': '', f'#{alias}': ''})
-            return
-
-    await message.answer(f'Не удалось найти алиас')
+@bp.on.chat_message(AliasRule(prefix='#'))
+async def alias_send(message: vkbottle.bot.Message, cleared_text, alias):
+    channel_id = await db_helpers.get_channel_by_alias(
+        alias, chat_id=message.chat_id
+    )
+    message.text = cleared_text
+    await send_to_discord(channel_id, message)
+    return
 
 
-@bp.on.chat_message(vkbottle.bot.rules.FuncRule(lambda message: not message.text.startswith(('/', '#'))))
+@bp.on.chat_message(NotStartsWithRule())
 async def duplex_chat(message: vkbottle.bot.Message):
     duplex_channel = await db_helpers.get_chat_duplex_channel(message.chat_id)
     if duplex_channel:

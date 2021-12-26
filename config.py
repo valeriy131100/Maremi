@@ -5,6 +5,7 @@ env.read_env()
 
 vk_token = env('VK_TOKEN')
 vk_prefix = env('VK_PREFIX', default='/')
+vk_alias_prefix = env('VK_ALIAS_PREFIX', default='#')
 
 discord_token = env('DISCORD_TOKEN')
 discord_prefix = env('DISCORD_PREFIX', defualt='m.')
