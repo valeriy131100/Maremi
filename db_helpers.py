@@ -41,8 +41,9 @@ async def get_chat_server(chat_id):
         await cur.execute(
             'SELECT server_id FROM ServerToChat WHERE chat_id=?', (chat_id, )
         )
-        server_id = (await cur.fetchone())[0]
-        return server_id
+        server_id = await cur.fetchone()
+        if server_id:
+            return server_id[0]
 
 
 async def get_server_chat(server_id):

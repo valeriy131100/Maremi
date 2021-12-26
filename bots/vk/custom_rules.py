@@ -75,6 +75,8 @@ class AliasRule(ABCRule):
     async def check(self, event: Message) -> Union[dict, bool]:
         prefix = self.prefix
         commands = await db_helpers.get_aliases(chat_id=event.chat_id)
+        if not commands:
+            return False
 
         for command in commands:
             if event.text.startswith(f'{prefix}{command} '):
