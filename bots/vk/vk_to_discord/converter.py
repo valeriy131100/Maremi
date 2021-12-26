@@ -47,15 +47,6 @@ async def make_embed(vk_message: vkbottle.bot.Message, text=None,
             icon_url=from_avatar,
             url=from_url
         )
-
-        embed_message.add_field(
-            name='❤️',
-            value=post.likes.count
-        )
-        embed_message.add_field(
-            name='💬',
-            value=post.comments.count
-        )
     elif text:
         embed_message = discord.Embed(description=text, timestamp=timestamp)
     else:
