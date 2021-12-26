@@ -33,10 +33,13 @@ async def get_gallery_message(attachment_id, gallery_id, embed):
     return embed, buttons
 
 
-async def create_gallery(images, start_id=0, embed=None):
-    gallery_images = await freeimagehost.multiple_upload_and_get_url(
-        images
-    )
+async def create_gallery(images, start_id=0, embed=None, upload=True):
+    if upload:
+        gallery_images = await freeimagehost.multiple_upload_and_get_url(
+            images
+        )
+    else:
+        gallery_images = images
     gallery_id = await db_helpers.create_gallery(gallery_images)
     if not embed:
         embed = discord.Embed()

@@ -3,6 +3,8 @@ import vkbottle.bot
 import bots
 import db_helpers
 from datetime import datetime
+
+from bots.discord.utils.galleries import create_gallery
 from bots.vk.utils import get_photo_max_size
 
 
@@ -43,36 +45,48 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
     bots.temp['webhooks'].append(webhook.id)
 
     if vk_message.attachments:
-        first_embed = True
+        images = []
         for attachment in vk_message.attachments:
             if photo := attachment.photo:
                 photo_size = get_photo_max_size(photo.sizes)
-                if first_embed:
-                    embed_message = await make_embed(vk_message)
-                    embed_message.set_image(url=photo_size.url)
-                    first_embed = False
-                    await webhook.send(
-                        text,
-                        embed=embed_message,
-                        avatar_url=avatar_url,
-                        username=username
-                    )
-                else:
-                    photo_embed = await make_embed(vk_message)
-                    photo_embed.set_image(url=photo_size.url)
-                    await webhook.send(
-                        embed=photo_embed,
-                        avatar_url=avatar_url,
-                        username=username
-                    )
+                images.append(photo_size.url)
             elif sticker := attachment.sticker:
                 for size in sticker.images:
                     if size.width == 128:
                         size_128 = size
-                embed_message = await make_embed(vk_message, text)
-                embed_message.set_image(url=size_128.url)
-                await webhook.send(embed=embed_message, avatar_url=avatar_url, username=username)
-                return
+                        embed_message = await make_embed(vk_message)
+                        embed_message.set_image(url=size_128.url)
+                        await webhook.send(
+                            embed=embed_message,
+                            avatar_url=avatar_url,
+                            username=username
+                        )
+
+        images_count = len(images)
+        if images_count == 1:
+            embed_message = await make_embed(vk_message)
+            embed_message.set_image(images[0])
+            await webhook.send(
+                text,
+                embed=embed_message,
+                avatar_url=avatar_url,
+                username=username,
+            )
+        elif images_count > 1:
+            embed_message = await make_embed(vk_message, text)
+            embed_message, buttons = await create_gallery(
+                images,
+                embed=embed_message,
+                upload=False
+            )
+            await webhook.send(
+                embed=embed_message,
+                avatar_url=avatar_url,
+                username=username,
+                view=buttons
+            )
+        elif text:
+            await webhook.send(text, avatar_url=avatar_url, username=username)
     else:
         await webhook.send(text, avatar_url=avatar_url, username=username)
 
