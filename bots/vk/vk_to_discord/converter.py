@@ -1,16 +1,57 @@
+from typing import Optional
+
 import disnake as discord
 import vkbottle.bot
 import bots
 import db_helpers
 from datetime import datetime
+from vkbottle_types.objects import WallWallpostFull
 
 from bots.discord.utils.galleries import create_gallery
 from bots.vk.utils import get_photo_max_size
 
 
-async def make_embed(vk_message: vkbottle.bot.Message, text=None):
+POST_URL_TEMPLATE = 'https://vk.com/wall{from_id}_{post_id}'
+
+
+async def make_embed(vk_message: vkbottle.bot.Message, text=None,
+                     post: Optional[WallWallpostFull] = None):
     timestamp = datetime.utcfromtimestamp(vk_message.date)
-    if text:
+    if post:
+        from_name, from_avatar = await get_from_info_from_wall_post(post)
+
+        post_text = post.text
+        if post_text and len(post_text) > 4096:
+            post_text = f'{post.text[:4093]}...'
+
+        post_link = POST_URL_TEMPLATE.format(
+            from_id=post.from_id,
+            post_id=post.id
+        )
+
+        post_timestamp = datetime.utcfromtimestamp(post.date)
+
+        embed_message = discord.Embed(
+            title=f'Запись на стене',
+            url=post_link,
+            description=post_text,
+            timestamp=post_timestamp
+        )
+
+        embed_message.set_author(
+            name=from_name,
+            icon_url=from_avatar
+        )
+
+        embed_message.add_field(
+            name='❤️',
+            value=post.likes.count
+        )
+        embed_message.add_field(
+            name='💬',
+            value=post.comments.count
+        )
+    elif text:
         embed_message = discord.Embed(description=text, timestamp=timestamp)
     else:
         embed_message = discord.Embed(timestamp=timestamp)
@@ -31,6 +72,26 @@ async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
     return username, avatar_url
 
 
+async def get_from_info_from_wall_post(post: WallWallpostFull):
+    from_id = post.from_id
+    group_info = None
+    user_info = None
+    if from_id < 0:
+        group_info = await bots.vk_bot.api.groups.get_by_id(
+            group_id=str(abs(from_id))
+        )
+        group_name = group_info[0].name
+        group_avatar = group_info[0].photo_200
+        return group_name, group_avatar
+    else:
+        user_info = await bots.vk_bot.api.users.get(
+            user_ids=[from_id], fields=['photo_200']
+        )
+        user_name = f'{user_info[0].first_name} {user_info[0].last_name}'
+        user_avatar = user_info[0].photo_200
+        return user_name, user_avatar
+
+
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_replace=None):
     channel = bots.discord_bot.get_channel(channel_id)
     text = vk_message.text
@@ -46,6 +107,7 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
 
     if vk_message.attachments:
         images = []
+        post_to_send = None
         for attachment in vk_message.attachments:
             if photo := attachment.photo:
                 photo_size = get_photo_max_size(photo.sizes)
@@ -61,10 +123,20 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
                             avatar_url=avatar_url,
                             username=username
                         )
+            elif post := attachment.wall:
+                post_to_send = post
+                if post.attachments:
+                    for post_attachment in post.attachments:
+                        if post_photo := post_attachment.photo:
+                            photo_size = get_photo_max_size(post_photo.sizes)
+                            images.append(photo_size.url)
 
         images_count = len(images)
+        embed_message = await make_embed(
+            vk_message,
+            post=post_to_send
+        )
         if images_count == 1:
-            embed_message = await make_embed(vk_message)
             embed_message.set_image(images[0])
             await webhook.send(
                 text,
@@ -73,20 +145,31 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message, text_rep
                 username=username,
             )
         elif images_count > 1:
-            embed_message = await make_embed(vk_message, text)
             embed_message, buttons = await create_gallery(
                 images,
                 embed=embed_message,
                 upload=False
             )
             await webhook.send(
+                text,
                 embed=embed_message,
                 avatar_url=avatar_url,
                 username=username,
                 view=buttons
             )
+        elif post_to_send:
+            # post without images
+            await webhook.send(
+                embed=embed_message,
+                avatar_url=avatar_url,
+                username=username
+            )
         elif text:
-            await webhook.send(text, avatar_url=avatar_url, username=username)
+            await webhook.send(
+                text,
+                avatar_url=avatar_url,
+                username=username
+            )
     else:
         await webhook.send(text, avatar_url=avatar_url, username=username)
 
