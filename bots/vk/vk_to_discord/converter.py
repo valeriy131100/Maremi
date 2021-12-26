@@ -3,7 +3,7 @@ import vkbottle.bot
 import bots
 import db_helpers
 from datetime import datetime
-from vk_utils import get_photo_max_size
+from bots.vk.utils import get_photo_max_size
 
 
 async def make_embed(vk_message: vkbottle.bot.Message, text=None):

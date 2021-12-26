@@ -3,8 +3,8 @@ import disnake as discord
 from vkbottle import PhotoMessageUploader
 import bots
 import db_helpers
-from discord_utils import EMOJI_REGEX, download_emoji, download_file
-from vk_utils import get_random_id
+from bots.discord.utils.emojis import EMOJI_REGEX, download_file, download_emoji
+from bots.vk.utils import get_random_id
 
 
 async def send_to_vk(chat_id, discord_message: discord.Message):

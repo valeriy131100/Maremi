@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional
+from typing import Optional, List
 
 from vkbottle_types.objects import PhotosPhotoSizesType as SizeType
 
@@ -20,4 +20,3 @@ def get_photo_max_size(photo_sizes: Optional[List[SizeType]]):
     )
 
     return max_size
-
