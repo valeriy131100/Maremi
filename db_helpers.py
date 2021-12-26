@@ -1,6 +1,7 @@
 import aiosqlite
 import aiofiles
 from config import db_file
+from aiosqlite import IntegrityError
 
 
 async def create_db():
@@ -9,17 +10,28 @@ async def create_db():
         await cur.executescript(await create_sql.read())
 
 
-async def make_server_to_chat(server_id, chat_id, default_channel):
+async def connect_server_to_chat(server_id, chat_id, default_channel):
     async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
-        await cur.execute(
-            'INSERT INTO Server (server_id, server_default_channel) VALUES (?, ?)',
-            (server_id, default_channel)
-        )
-        await cur.execute(
-            'INSERT INTO ServerToChat (server_id, chat_id) VALUES (?, ?)',
-            (server_id, chat_id)
-        )
+        try:
+            await cur.execute(
+                'INSERT INTO Server (server_id, server_default_channel) VALUES (?, ?)',
+                (server_id, default_channel)
+            )
+        except IntegrityError:
+            await cur.execute(
+                'UPDATE Server SET server_default_channel = ? WHERE server_id = ?',
+                (default_channel, server_id)
+            )
+            await cur.execute(
+                'UPDATE ServerToChat SET chat_id = ? WHERE server_id = ?',
+                (chat_id, server_id)
+            )
+        else:
+            await cur.execute(
+                'INSERT INTO ServerToChat (server_id, chat_id) VALUES (?, ?)',
+                (server_id, chat_id)
+            )
         await db.commit()
 
 
