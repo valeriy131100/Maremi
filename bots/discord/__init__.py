@@ -2,10 +2,12 @@ import aiofiles
 from disnake.ext import commands
 from .discord_to_vk import DiscordToVk
 from .image_working import ImageWorking
+from .utils import Utils
 
 discord_bot = commands.Bot(command_prefix='m.', help_command=None)
 discord_bot.add_cog(DiscordToVk(discord_bot))
 discord_bot.add_cog(ImageWorking(discord_bot))
+discord_bot.add_cog(Utils(discord_bot))
 
 
 @discord_bot.command(name='help')
