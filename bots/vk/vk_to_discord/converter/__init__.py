@@ -95,6 +95,15 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
     channel = bots.discord_bot.get_channel(channel_id)
     webhook = await get_or_create_channel_send_webhook(channel)
-    await webhook.send(
+    discord_message = await webhook.send(
+        wait=True,
         **(await get_discord_message(vk_message))
     )
+    await db_helpers.save_message(
+        server_id=discord_message.guild.id,
+        channel_id=channel_id,
+        chat_id=vk_message.chat_id,
+        vk_message_id=vk_message.message_id,
+        discord_message_id=discord_message.id
+    )
+

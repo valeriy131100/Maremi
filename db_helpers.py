@@ -293,3 +293,20 @@ async def get_gallery_images(gallery_id):
         result = await cur.fetchall()
         images = [row[0] for row in result]
         return images
+
+
+async def save_message(server_id, channel_id, chat_id,
+                       vk_message_id, discord_message_id):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'INSERT INTO MessageToMessage'
+            '(server_id, channel_id, chat_id,'
+            'vk_message_id, discord_message_id)'
+            'VALUES'
+            '(:server_id, :channel_id, :chat_id,'
+            ':vk_message_id, :discord_message_id)',
+            (server_id, channel_id, chat_id,
+             vk_message_id, discord_message_id)
+        )
+        await db.commit()

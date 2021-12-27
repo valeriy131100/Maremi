@@ -16,7 +16,7 @@ CREATE TABLE "ServerChannelAlias" (
 
 CREATE TABLE "ServerToChat" (
 	"server_id"	INTEGER NOT NULL UNIQUE,
-	"chat_id"	INTEGER,
+	"chat_id"	INTEGER NOT NULL UNIQUE,
 	FOREIGN KEY("server_id") REFERENCES "Server"("server_id") ON DELETE CASCADE
 );
 
@@ -35,4 +35,15 @@ CREATE TABLE "DiscordNickName" (
 CREATE TABLE "GalleryToImage" (
 	"gallery_id"	INTEGER NOT NULL,
 	"image_url"	TEXT NOT NULL
+);
+
+CREATE TABLE "MessageToMessage" (
+	"server_id"	INTEGER NOT NULL,
+	"channel_id"	INTEGER NOT NULL,
+	"chat_id"	INTEGER NOT NULL,
+	"vk_message_id"	INTEGER NOT NULL UNIQUE,
+	"discord_message_id"	INTEGER NOT NULL,
+	FOREIGN KEY("chat_id") REFERENCES "ServerToChat"("chat_id") ON DELETE CASCADE,
+	FOREIGN KEY("server_id") REFERENCES "ServerToChat"("server_id") ON DELETE CASCADE,
+	UNIQUE("channel_id","discord_message_id")
 );

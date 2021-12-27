@@ -46,7 +46,14 @@ async def get_vk_message(discord_message: discord.Message):
 
 
 async def send_to_vk(chat_id, discord_message: discord.Message):
-    await bots.vk_bot.api.messages.send(
+    vk_message_id = await bots.vk_bot.api.messages.send(
         chat_id=chat_id,
         **(await get_vk_message(discord_message))
+    )
+    await db_helpers.save_message(
+        server_id=discord_message.guild.id,
+        channel_id=discord_message.channel.id,
+        chat_id=chat_id,
+        vk_message_id=vk_message_id,
+        discord_message_id=discord_message.id
     )
