@@ -23,7 +23,7 @@ async def send_art(message: vkbottle.bot.Message, cleared_text):
         chat_id=message.chat_id
     )
     message.text = cleared_text
-    await send_to_discord(channel_id)
+    await send_to_discord(channel_id, message)
 
 
 @bp.on.chat_message(AliasRule())
