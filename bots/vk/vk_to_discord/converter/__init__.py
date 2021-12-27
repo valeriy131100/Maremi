@@ -79,25 +79,22 @@ async def process_images(images, embed):
         return embed, buttons
 
 
-async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message,
-                          text_replace=None):
-    channel = bots.discord_bot.get_channel(channel_id)
-    text = vk_message.text
-    if text_replace:
-        for s, s_replace in text_replace.items():
-            text = text.replace(s, s_replace)
-            if not text:
-                break
+async def get_discord_message(vk_message: vkbottle.bot.Message):
 
     username, avatar_url = await get_user_info_from_vk_message(vk_message)
     embed, buttons = await process_vk_attachments(vk_message)
+    return {
+        'content': vk_message.text,
+        'embed': embed,
+        'avatar_url': avatar_url,
+        'username': username,
+        'view': buttons
+    }
+
+
+async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
+    channel = bots.discord_bot.get_channel(channel_id)
     webhook = await get_or_create_channel_send_webhook(channel)
-
     await webhook.send(
-        text,
-        embed=embed,
-        avatar_url=avatar_url,
-        username=username,
-        view=buttons
+        **(await get_discord_message(vk_message))
     )
-
