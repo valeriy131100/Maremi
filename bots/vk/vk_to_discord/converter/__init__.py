@@ -4,6 +4,7 @@ import bots
 import db_helpers
 from datetime import datetime
 from bots.discord.utils.galleries import create_gallery
+from bots.discord.utils.webhooks import get_or_create_channel_webhook
 from bots.vk.utils import get_photo_max_size
 from .wallpost import make_post_embed
 
@@ -90,20 +91,13 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message,
 
     username, avatar_url = await get_user_info_from_vk_message(vk_message)
     embed, buttons = await process_vk_attachments(vk_message)
+    webhook = await get_or_create_channel_webhook(channel)
 
-    webhook = None
-    try:
-        webhook = await channel.create_webhook(name=username)
-        bots.temp['webhooks'].append(webhook.id)
-
-        await webhook.send(
-            text,
-            embed=embed,
-            avatar_url=avatar_url,
-            username=username,
-            view=buttons
-        )
-    finally:
-        if webhook:
-            await webhook.delete()
+    await webhook.send(
+        text,
+        embed=embed,
+        avatar_url=avatar_url,
+        username=username,
+        view=buttons
+    )
 

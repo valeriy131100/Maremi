@@ -4,8 +4,5 @@ from bots.vk import vk_bot
 temp = {
     'chats': {
         # dict vk_chat_id: on/off bool
-    },
-    'webhooks': [
-        # webhooks_ids
-    ],
+    }
 }
