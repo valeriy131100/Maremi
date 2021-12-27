@@ -7,7 +7,7 @@ from bots.discord.utils.emojis import EMOJI_REGEX, download_file, download_emoji
 from bots.vk.utils import get_random_id
 
 
-async def send_to_vk(chat_id, discord_message: discord.Message):
+async def get_vk_message(discord_message: discord.Message):
     nickname = await db_helpers.get_discord_nickname(discord_message.author.id)
     message_text = discord_message.content
     photo_uploader = PhotoMessageUploader(api=bots.vk_bot.api)
@@ -38,9 +38,15 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
 
     attachments = ','.join(attachments_list)
 
+    return {
+        'message': message_text,
+        'random_id': get_random_id(),
+        'attachment': attachments
+    }
+
+
+async def send_to_vk(chat_id, discord_message: discord.Message):
     await bots.vk_bot.api.messages.send(
         chat_id=chat_id,
-        message=message_text,
-        random_id=get_random_id(),
-        attachment=attachments
+        **(await get_vk_message(discord_message))
     )
