@@ -1,8 +1,9 @@
 import disnake as discord
 import db_helpers
+import bots
 from disnake.ext import commands
 from bots.discord.utils.webhooks import get_server_bot_webhooks_ids
-from .converter import send_to_vk
+from . import converter
 from .channels import DiscordToVkChannels
 from .user_settings import DiscordToVkUserSettings
 from .connect import DiscordToVkConnect
@@ -23,4 +24,30 @@ class DiscordToVk(commands.Cog):
                 and not message.content.startswith(self.bot.command_prefix)
                 and message.webhook_id not in webhooks):
             chat_id = await db_helpers.get_server_chat(message.guild.id)
-            await send_to_vk(chat_id, message)
+            await converter.send_to_vk(chat_id, message)
+
+    @commands.Cog.listener()
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+        discord_message = payload.cached_message
+        if not discord_message:
+            channel = bots.discord_bot.get_channel(
+                payload.channel_id
+            )
+            discord_message = await channel.fetch_message(
+                payload.message_id
+            )
+
+        vk_message = await db_helpers.get_vk_message(
+            discord_message
+        )
+
+        if not vk_message:
+            return
+
+        chat_id, vk_message_id = vk_message
+
+        await bots.vk_bot.api.messages.edit(
+            peer_id=2000000000+chat_id,
+            conversation_message_id=vk_message_id,
+            **(await converter.get_vk_message(discord_message))
+        )

@@ -1,6 +1,10 @@
+from typing import Union
+
 import aiosqlite
 import aiofiles
 import disnake as discord
+import vkbottle.bot
+
 from config import db_file
 from aiosqlite import IntegrityError
 
@@ -317,14 +321,15 @@ async def get_vk_message(discord_message: discord.Message):
     async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
         await cur.execute(
-            'SELECT chat_id, vk_message_id FROM MessageToMessage'
-            'WHERE server_id = :server_id'
-            'and channel_id = :channel_id'
-            'and discord_message_od = :discord_message_id',
+            'SELECT chat_id, vk_message_id FROM MessageToMessage '
+            'WHERE server_id = :server_id '
+            'and channel_id = :channel_id '
+            'and discord_message_id = :discord_message_id',
             (
                 discord_message.guild.id,
                 discord_message.channel.id,
-                discord_message.id)
+                discord_message.id
+            )
         )
         result = await cur.fetchone()
         return result
