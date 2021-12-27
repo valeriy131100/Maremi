@@ -28,14 +28,12 @@ class DiscordToVk(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
-        discord_message = payload.cached_message
-        if not discord_message:
-            channel = bots.discord_bot.get_channel(
-                payload.channel_id
-            )
-            discord_message = await channel.fetch_message(
-                payload.message_id
-            )
+        channel = bots.discord_bot.get_channel(
+            payload.channel_id
+        )
+        discord_message = await channel.fetch_message(
+            payload.message_id
+        )
 
         vk_message = await db_helpers.get_vk_message(
             discord_message
