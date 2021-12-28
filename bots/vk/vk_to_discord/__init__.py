@@ -44,22 +44,32 @@ async def duplex_chat(message: vkbottle.bot.Message):
     duplex_channel = await db_helpers.get_chat_duplex_channel(message.chat_id)
     if duplex_channel:
         await converter.send_to_discord(duplex_channel, message)
+        
+        
+def event_to_message(event: dict):
+    message = event['object']
+    event['object'] = None
+    event['object'] = {
+        'message': message,
+        'client_info': {}
+    }
+    message = vkbottle.tools.dev.mini_types.bot.message_min(
+        event,
+        ctx_api=bots.vk_bot.api
+    )
+
+    return message
 
 
-@bp.on.raw_event(event=GroupEventType.MESSAGE_EDIT,
-                 dataclass=vkbottle.bot.MessageEvent)
-async def duplex_edit(event: vkbottle.bot.MessageEvent):
-    if event.group_id == config.vk_group_id:
+@bp.on.raw_event(event=GroupEventType.MESSAGE_EDIT)
+async def duplex_edit(event: dict):
+    vk_message = event_to_message(event)
+    
+    if vk_message.group_id == config.vk_group_id:
         return
-    discord_message_raw = await db_helpers.get_discord_message(event)
+    discord_message_raw = await db_helpers.get_discord_message(vk_message)
     if not discord_message_raw:
         return
-
-    vk_messages = await bots.vk_bot.api.messages.get_by_conversation_message_id(
-        peer_id=event.peer_id,
-        conversation_message_ids=[event.conversation_message_id]
-    )
-    vk_message = vk_messages.items[0]
 
     channel_id, discord_message_id = discord_message_raw
     channel = bots.discord_bot.get_channel(channel_id)
