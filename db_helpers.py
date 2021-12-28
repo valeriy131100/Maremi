@@ -317,19 +317,32 @@ async def save_message(server_id, channel_id, chat_id,
         await db.commit()
 
 
-async def get_vk_message(discord_message: discord.Message):
+async def get_vk_message(discord_message: discord.Message = None,
+                         guild_id=None,
+                         channel_id=None,
+                         message_id=None):
+    if not discord_message and not guild_id:
+        return
     async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
+        if discord_message:
+            params = (
+                discord_message.guild.id,
+                discord_message.channel.id,
+                discord_message.id
+            )
+        else:
+            params = (
+                guild_id,
+                channel_id,
+                message_id
+            )
         await cur.execute(
             'SELECT chat_id, vk_message_id FROM MessageToMessage '
             'WHERE server_id = :server_id '
             'and channel_id = :channel_id '
             'and discord_message_id = :discord_message_id',
-            (
-                discord_message.guild.id,
-                discord_message.channel.id,
-                discord_message.id
-            )
+            params
         )
         result = await cur.fetchone()
         return result
@@ -348,5 +361,5 @@ async def get_discord_message(vk_message: Union[vkbottle.bot.Message,
                 vk_message.conversation_message_id
             )
         )
-        result =await cur.fetchone()
+        result = await cur.fetchone()
         return result

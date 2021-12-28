@@ -36,7 +36,7 @@ class DiscordToVk(commands.Cog):
         )
 
         vk_message = await db_helpers.get_vk_message(
-            discord_message
+            discord_message=discord_message
         )
 
         if not vk_message:
@@ -48,4 +48,23 @@ class DiscordToVk(commands.Cog):
             peer_id=2000000000+chat_id,
             conversation_message_id=vk_message_id,
             **(await converter.get_vk_message(discord_message))
+        )
+
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageUpdateEvent):
+        vk_message = await db_helpers.get_vk_message(
+            guild_id=payload.guild_id,
+            channel_id=payload.channel_id,
+            message_id=payload.message_id
+        )
+
+        if not vk_message:
+            return
+
+        chat_id, vk_message_id = vk_message
+
+        await bots.vk_bot.api.messages.delete(
+            peer_id=2000000000 + chat_id,
+            conversation_message_ids=[vk_message_id],
+            delete_for_all=True
         )
