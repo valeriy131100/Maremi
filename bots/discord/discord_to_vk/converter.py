@@ -5,6 +5,7 @@ import bots
 import db_helpers
 from bots.discord.utils.emojis import EMOJI_REGEX, download_file, download_emoji
 from bots.vk.utils import get_random_id
+from datetime import datetime
 
 
 async def get_vk_message(discord_message: discord.Message):
@@ -58,5 +59,6 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
         channel_id=discord_message.channel.id,
         chat_id=chat_id,
         vk_message_id=vk_message_id,
-        discord_message_id=discord_message.id
+        discord_message_id=discord_message.id,
+        timestamp=datetime.now().timestamp()
     )

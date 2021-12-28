@@ -301,18 +301,18 @@ async def get_gallery_images(gallery_id):
 
 
 async def save_message(server_id, channel_id, chat_id,
-                       vk_message_id, discord_message_id):
+                       vk_message_id, discord_message_id, timestamp):
     async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
         await cur.execute(
             'INSERT INTO MessageToMessage'
             '(server_id, channel_id, chat_id,'
-            'vk_message_id, discord_message_id)'
+            'vk_message_id, discord_message_id, vk_timestamp)'
             'VALUES'
             '(:server_id, :channel_id, :chat_id,'
-            ':vk_message_id, :discord_message_id)',
+            ':vk_message_id, :discord_message_id, :vk_timestamp)',
             (server_id, channel_id, chat_id,
-             vk_message_id, discord_message_id)
+             vk_message_id, discord_message_id, timestamp)
         )
         await db.commit()
 
@@ -349,17 +349,52 @@ async def get_vk_message(discord_message: discord.Message = None,
 
 
 async def get_discord_message(vk_message: Union[vkbottle.bot.Message,
-                                                vkbottle.bot.MessageEvent]):
+                                                vkbottle.bot.MessageEvent] = None,
+                              chat_id=None, vk_message_id=None):
+    if not vk_message and not chat_id:
+        return
     async with aiosqlite.connect(db_file) as db:
         cur = await db.cursor()
+        if vk_message:
+            params = (
+                vk_message.chat_id,
+                vk_message.conversation_message_id
+            )
+        else:
+            params = (
+                chat_id,
+                vk_message_id
+            )
         await cur.execute(
             'SELECT channel_id, discord_message_id FROM MessageToMessage '
             'WHERE chat_id = :chat_id '
             'and vk_message_id = :vk_message_id ',
-            (
-                vk_message.chat_id,
-                vk_message.conversation_message_id
-            )
+            params
         )
         result = await cur.fetchone()
         return result
+
+
+async def remove_vk_message(vk_message: Union[vkbottle.bot.Message,
+                                              vkbottle.bot.MessageEvent] = None,
+                            chat_id=None, vk_message_id=None):
+    if not vk_message and not chat_id:
+        return
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        if vk_message:
+            params = (
+                vk_message.chat_id,
+                vk_message.conversation_message_id
+            )
+        else:
+            params = (
+                chat_id,
+                vk_message_id
+            )
+        await cur.execute(
+            'DELETE FROM MessageToMessage '
+            'WHERE chat_id = :chat_id and vk_message_id = :vk_message_id',
+            params
+        )
+        await db.commit()
