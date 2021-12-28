@@ -104,6 +104,7 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
         channel_id=channel_id,
         chat_id=vk_message.chat_id,
         vk_message_id=vk_message.conversation_message_id,
-        discord_message_id=discord_message.id
+        discord_message_id=discord_message.id,
+        timestamp=vk_message.date
     )
 

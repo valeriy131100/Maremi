@@ -35,6 +35,12 @@ class DiscordToVk(commands.Cog):
             payload.message_id
         )
 
+        guild = discord_message.guild
+        webhooks = await get_server_bot_webhooks_ids(guild)
+        if discord_message := payload.cached_message:
+            if discord_message.webhook_id in webhooks:
+                return
+
         vk_message = await db_helpers.get_vk_message(
             discord_message=discord_message
         )
@@ -51,7 +57,13 @@ class DiscordToVk(commands.Cog):
         )
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, payload: discord.RawMessageUpdateEvent):
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        guild = self.bot.get_guild(payload.guild_id)
+        webhooks = await get_server_bot_webhooks_ids(guild)
+        if discord_message := payload.cached_message:
+            if discord_message.webhook_id in webhooks:
+                return
+
         vk_message = await db_helpers.get_vk_message(
             guild_id=payload.guild_id,
             channel_id=payload.channel_id,
