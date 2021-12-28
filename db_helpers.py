@@ -333,3 +333,20 @@ async def get_vk_message(discord_message: discord.Message):
         )
         result = await cur.fetchone()
         return result
+
+
+async def get_discord_message(vk_message: Union[vkbottle.bot.Message,
+                                                vkbottle.bot.MessageEvent]):
+    async with aiosqlite.connect(db_file) as db:
+        cur = await db.cursor()
+        await cur.execute(
+            'SELECT channel_id, discord_message_id FROM MessageToMessage '
+            'WHERE chat_id = :chat_id '
+            'and vk_message_id = :vk_message_id ',
+            (
+                vk_message.chat_id,
+                vk_message.conversation_message_id
+            )
+        )
+        result =await cur.fetchone()
+        return result

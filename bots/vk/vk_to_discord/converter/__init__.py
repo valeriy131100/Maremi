@@ -20,7 +20,10 @@ async def make_basic_embed(vk_message: vkbottle.bot.Message, text=None):
 
 
 async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
-    user = await vk_message.get_user(fields=['photo_50'])
+    api = bots.vk_bot.api
+    user = (
+        await api.users.get(user_ids=vk_message.from_id, fields='photo_50')
+    )[0]
     user_nickname = await db_helpers.get_vk_nickname(user.id)
     if user_nickname:
         username = f'{user_nickname} ({user.first_name} {user.last_name})'
