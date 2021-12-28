@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 
 import aiosqlite
 from disnake import NotFound
@@ -67,6 +68,8 @@ async def _check_messages():
 
                     channel_id, discord_message_id = discord_message_raw
                     channel = bots.discord_bot.get_channel(channel_id)
+                    if not channel:
+                        continue
                     try:
                         discord_message = await channel.fetch_message(
                             discord_message_id
@@ -86,6 +89,9 @@ async def _check_messages():
 
 async def check_messages_periodic(sleep_time):
     while True:
-        await asyncio.sleep(sleep_time)
+        try:
+            await asyncio.sleep(sleep_time)
+        except Exception:
+            traceback.print_exc()
         await _check_messages()
 
