@@ -90,8 +90,8 @@ async def _check_messages():
 async def check_messages_periodic(sleep_time):
     while True:
         try:
-            await asyncio.sleep(sleep_time)
+            await _check_messages()
         except Exception:
             traceback.print_exc()
-        await _check_messages()
-
+        finally:
+            await asyncio.sleep(sleep_time)
