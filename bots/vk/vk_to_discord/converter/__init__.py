@@ -18,6 +18,7 @@ from .wallpost import make_post_embed
 DOC_GIF_TYPE = 3
 DOC_IMAGE_TYPE = 4
 
+EMBED_TYPE_NULL = 'embed_type_null'
 EMBED_TYPE_POST = 'embed_type_post'
 EMBED_TYPE_BASIC = 'embed_type_basic'
 
@@ -27,7 +28,7 @@ class ProcessedAttachments:
     images: List[str] = field(default_factory=list)
     gif_images: List[str] = field(default_factory=list)
     files: Dict[str, str] = field(default_factory=dict)
-    embed_type: str = EMBED_TYPE_BASIC
+    embed_type: str = EMBED_TYPE_NULL
     embed_args: List[Any] = field(default_factory=list)
 
 
@@ -60,9 +61,11 @@ async def process_attachments(attachments: List[
     media = ProcessedAttachments()
     for attachment in attachments:
         if photo := attachment.photo:
+            media.embed_type = EMBED_TYPE_BASIC
             photo_size = get_photo_max_size(photo.sizes)
             media.images.append(photo_size.url)
         elif doc := attachment.doc:
+            media.embed_type = EMBED_TYPE_BASIC
             if doc.type == DOC_IMAGE_TYPE:
                 media.images.append(doc.url)
             elif doc.type == DOC_GIF_TYPE:
@@ -70,6 +73,7 @@ async def process_attachments(attachments: List[
             else:
                 media.files[doc.title] = doc.url
         elif sticker := attachment.sticker:
+            media.embed_type = EMBED_TYPE_BASIC
             for size in sticker.images:
                 if size.width == 128:
                     size_128 = size
@@ -125,10 +129,11 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
 
     username, avatar_url = await get_user_info_from_vk_message(vk_message)
     media = await process_attachments(vk_message.attachments)
+    embed = None
 
     if media.embed_type == EMBED_TYPE_POST:
         embed = await make_post_embed(*media.embed_args)
-    else:
+    elif media.embed_type == EMBED_TYPE_BASIC:
         embed = await make_basic_embed(vk_message)
 
     media.images.extend(
