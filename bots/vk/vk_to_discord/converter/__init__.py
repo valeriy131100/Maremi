@@ -106,7 +106,8 @@ async def process_images(images, embed: disnake.Embed):
         embed, buttons = await create_gallery(
             images,
             embed=embed,
-            upload=False
+            upload=False,
+            invite_mode=True
         )
         return embed, buttons
 

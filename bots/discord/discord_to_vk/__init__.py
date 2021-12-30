@@ -31,9 +31,12 @@ class DiscordToVk(commands.Cog):
         channel = bots.discord_bot.get_channel(
             payload.channel_id
         )
-        discord_message = await channel.fetch_message(
-            payload.message_id
-        )
+        try:
+            discord_message = await channel.fetch_message(
+                payload.message_id
+            )
+        except discord.NotFound:
+            return
 
         guild = discord_message.guild
         webhooks = await get_server_bot_webhooks_ids(guild)
