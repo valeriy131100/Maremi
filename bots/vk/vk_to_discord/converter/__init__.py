@@ -4,10 +4,11 @@ import vkbottle.bot
 import bots
 import db_helpers
 import freeimagehost
-from typing import Union, List
 from vkbottle_types.objects import MessagesMessageAttachment, \
     WallWallpostAttachment
 from datetime import datetime
+from typing import Union, List, Dict, Any
+from dataclasses import dataclass, field
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
@@ -19,6 +20,15 @@ DOC_IMAGE_TYPE = 4
 
 EMBED_TYPE_POST = 'embed_type_post'
 EMBED_TYPE_BASIC = 'embed_type_basic'
+
+
+@dataclass
+class ProcessedAttachments:
+    images: List[str] = field(default_factory=list)
+    gif_images: List[str] = field(default_factory=list)
+    files: Dict[str, str] = field(default_factory=dict)
+    embed_type: str = EMBED_TYPE_BASIC
+    embed_args: List[Any] = field(default_factory=list)
 
 
 async def make_basic_embed(vk_message: vkbottle.bot.Message, text=None):
@@ -47,40 +57,36 @@ async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
 async def process_attachments(attachments: List[
     Union[MessagesMessageAttachment, WallWallpostAttachment]
 ]):
-    images = []
-    gif_images = []
-    files = {}
-    embed_type = EMBED_TYPE_BASIC
-    embed_args = None
+    media = ProcessedAttachments()
     for attachment in attachments:
         if photo := attachment.photo:
             photo_size = get_photo_max_size(photo.sizes)
-            images.append(photo_size.url)
+            media.images.append(photo_size.url)
         elif doc := attachment.doc:
             if doc.type == DOC_IMAGE_TYPE:
-                images.append(doc.url)
+                media.images.append(doc.url)
             elif doc.type == DOC_GIF_TYPE:
-                gif_images.append(doc.url)
+                media.gif_images.append(doc.url)
             else:
-                files[doc.title] = doc.url
+                media.files[doc.title] = doc.url
         elif sticker := attachment.sticker:
             for size in sticker.images:
                 if size.width == 128:
                     size_128 = size
-                    images.append(size_128.url)
+                    media.images.append(size_128.url)
             break  # sticker always unique
         elif post := attachment.wall:
-            embed_type = EMBED_TYPE_POST
-            embed_args = (post,)
+            media.embed_type = EMBED_TYPE_POST
+            media.embed_args = (post,)
             if post.attachments:
-                post_images, post_gif_images, post_files, _, _ = (
+                post_media = (
                     await process_attachments(post.attachments)
                 )
-                images.extend(post_images)
-                gif_images.extend(post_gif_images)
-                files = {**files, **post_files}
+                media.images.extend(post_media.images)
+                media.gif_images.extend(post_media.gif_images)
+                media.files = {**media.files, **post_media.files}
 
-    return images, gif_images, files, embed_type, embed_args
+    return media
 
 
 async def process_images(images, embed: disnake.Embed):
@@ -118,24 +124,19 @@ async def process_files(files, embed: disnake.Embed):
 async def get_discord_message(vk_message: vkbottle.bot.Message):
 
     username, avatar_url = await get_user_info_from_vk_message(vk_message)
-    images = []
-    gif_images = []
-    files = {}
-    embed_type = EMBED_TYPE_BASIC
-    if vk_message.attachments:
-        images, gif_images, files, embed_type, embed_args = (
-            await process_attachments(vk_message.attachments)
-        )
+    media = await process_attachments(vk_message.attachments)
 
-    if embed_type == EMBED_TYPE_POST:
-        embed = await make_post_embed(*embed_args)
+    if media.embed_type == EMBED_TYPE_POST:
+        embed = await make_post_embed(*media.embed_args)
     else:
         embed = await make_basic_embed(vk_message)
 
-    images.extend(await freeimagehost.multiple_upload_and_get_url(gif_images))
+    media.images.extend(
+        await freeimagehost.multiple_upload_and_get_url(media.gif_images)
+    )
 
-    embed = await process_files(files, embed)
-    embed, buttons = await process_images(images, embed)
+    embed = await process_files(media.files, embed)
+    embed, buttons = await process_images(media.images, embed)
 
     return {
         'content': vk_message.text,
