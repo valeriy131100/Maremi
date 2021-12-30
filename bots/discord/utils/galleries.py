@@ -76,11 +76,12 @@ async def get_expanded_gallery_message(gallery_id, embed: discord.Embed):
         else:
             attachment_embed = discord.Embed()
             attachment_embed.set_image(url=attachment)
-            attachment_embed.set_author(
-                name=author.name,
-                url=author.url,
-                icon_url=author.icon_url
-            )
+            if author.name:
+                attachment_embed.set_author(
+                    name=author.name,
+                    url=author.url,
+                    icon_url=author.icon_url
+                )
             embeds.append(attachment_embed)
 
     return embeds
