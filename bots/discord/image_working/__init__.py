@@ -48,7 +48,7 @@ class ImageWorking(commands.Cog):
             await context.send('Пожалуйста, ответьте на сообщение, которое хотите разделить')
 
     @commands.command(name='gallery')
-    async def make_gallery(self, context: commands.Context):
+    async def make_gallery(self, context: commands.Context, mode=None):
         original_message = None
         if ref := context.message.reference:
             message = await context.channel.fetch_message(ref.message_id)
@@ -56,9 +56,22 @@ class ImageWorking(commands.Cog):
         else:
             message = context.message
         images_count = len(message.attachments)
-        gallery_message = await context.send(f'Загружаю {images_count} изображений')
+        if images_count < 2:
+            await context.send(
+                'Недостаточно вложений для создания галереи'
+            )
+            return
+        gallery_message = await context.send(
+            f'Загружаю {images_count} изображений'
+        )
         gallery_images = [attachment.url for attachment in message.attachments]
-        embed, buttons = await create_gallery(gallery_images)
+        if mode in ('i', 'invite'):
+            embed, buttons = await create_gallery(
+                gallery_images,
+                invite_mode=True
+            )
+        else:
+            embed, buttons = await create_gallery(gallery_images)
         await message.delete()
         if original_message:
             await original_message.delete()
