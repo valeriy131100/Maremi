@@ -18,5 +18,5 @@ discord_bot.add_cog(Utils(discord_bot))
 @discord_bot.command(name='help')
 async def help_(context: commands.Context):
     help_text = await format_help_message('discord_help_message.txt')
-    embed = discord.Embed(title='Список комманд', description=help_text)
+    embed = discord.Embed(title='Список команд', description=help_text)
     await context.send(embed=embed)
