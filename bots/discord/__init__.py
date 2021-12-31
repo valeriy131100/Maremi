@@ -1,3 +1,4 @@
+import disnake as discord
 import config
 from disnake.ext import commands
 from .discord_to_vk import DiscordToVk
@@ -17,4 +18,5 @@ discord_bot.add_cog(Utils(discord_bot))
 @discord_bot.command(name='help')
 async def help_(context: commands.Context):
     help_text = await format_help_message('discord_help_message.txt')
-    await context.send(help_text)
+    embed = discord.Embed(title='Список комманд', description=help_text)
+    await context.send(embed=embed)
