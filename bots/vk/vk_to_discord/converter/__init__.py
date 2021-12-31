@@ -72,23 +72,24 @@ async def process_attachments(attachments: List[
                 media.gif_images.append(doc.url)
             else:
                 media.files[doc.title] = doc.url
-        elif sticker := attachment.sticker:
-            media.embed_type = EMBED_TYPE_BASIC
-            for size in sticker.images:
-                if size.width == 128:
-                    size_128 = size
-                    media.images.append(size_128.url)
-            break  # sticker always unique
-        elif post := attachment.wall:
-            media.embed_type = EMBED_TYPE_POST
-            media.embed_args = (post,)
-            if post.attachments:
-                post_media = (
-                    await process_attachments(post.attachments)
-                )
-                media.images.extend(post_media.images)
-                media.gif_images.extend(post_media.gif_images)
-                media.files = {**media.files, **post_media.files}
+        elif isinstance(attachment, MessagesMessageAttachment):
+            if sticker := attachment.sticker:
+                media.embed_type = EMBED_TYPE_BASIC
+                for size in sticker.images:
+                    if size.width == 128:
+                        size_128 = size
+                        media.images.append(size_128.url)
+                break  # sticker always unique
+            elif post := attachment.wall:
+                media.embed_type = EMBED_TYPE_POST
+                media.embed_args = (post,)
+                if post.attachments:
+                    post_media = (
+                        await process_attachments(post.attachments)
+                    )
+                    media.images.extend(post_media.images)
+                    media.gif_images.extend(post_media.gif_images)
+                    media.files = {**media.files, **post_media.files}
 
     return media
 
