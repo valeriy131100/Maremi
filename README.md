@@ -1,5 +1,5 @@
 # Maremi
-Простой бот для синхронизации [vk](https://vk.com) чата и [discord](https://discord.com) сервера. Использует [disnake](https://github.com/DisnakeDev/disnake), [vkbottle](https://github.com/vkbottle/vkbottle) и [aiosqlite](https://github.com/omnilib/aiosqlite). Для хранения некоторых изображений используется [freeimagehost](https://freeimage.host/).
+Простой бот для синхронизации [vk](https://vk.com) чата и [discord](https://discord.com) сервера. Использует [disnake](https://github.com/DisnakeDev/disnake), [vkbottle](https://github.com/vkbottle/vkbottle) и [Tortoise ORM](https://github.com/tortoise/tortoise-orm). Для хранения некоторых изображений используется [freeimagehost](https://freeimage.host/).
 
 # Установка
 Вам понадобится установленный Python 3.9 и git.
@@ -20,7 +20,8 @@ $ cd Maremi
 $ source bin/activate
 $ pip install -r requirements.txt
 ```
-# Использование
+
+# Настройка перед использованием
 Заполните файл .env.example и переименуйте его в .env или иным образом передайте переменные среды:
 * VK_TOKEN - токен для вк-бота
 * VK_PREFIX - префикс вк-бота, по умолчанию - /
@@ -32,6 +33,14 @@ $ pip install -r requirements.txt
 * DATABASE - путь до базы данных SQLite, по умолчанию - servers.db. База будет создана, если файл не найден
 * FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api)
 
+После задания переменных среды примените миграции к базе данных:
+```bash
+$ source bin/activate
+$ aerich upgrade
+```
+
+# Использование
+
 На сервере и в чате у ботов должен быть полный доступ к сообщениям, дискорд-боту необходимы также права для управления сообщениями и вебхуками. В будущем возможно понадобится администрирование.
 
 Находясь в директории Maremi исполните:
@@ -40,7 +49,7 @@ $ bin/python main.py
 ```
 Бот запустится.
 
-# Основные команды
+## Основные команды
 Команды указаны с префиксами по умолчанию.
 
 * Discord
