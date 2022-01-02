@@ -30,7 +30,7 @@ $ pip install -r requirements.txt
 * VK_CHECK_MESSAGES_INTERVAL - частота проверки сообщений вк для синхронного удаления в секундах. Не ставьте слишком маленькое значение, вк апи это не любит. По умолчанию - 1 минута
 * DISCORD_TOKEN - токен для дискорд-бота
 * DISCORD_PREFIX - префикс дискорд-бота, по умолчанию - m.
-* DATABASE - путь до базы данных SQLite, по умолчанию - servers.db. База будет создана, если файл не найден
+* DATABASE - путь до базы данных в формате [строки подключения TortoiseORM](https://tortoise.github.io/databases.html#db-url), по умолчанию - sqlite://servers2.db
 * FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api)
 
 После задания переменных среды примените миграции к базе данных:
