@@ -2,7 +2,6 @@ import vkbottle.bot
 from vkbottle_types.events import GroupEventType
 import bots
 import config
-import db_helpers
 from . import converter
 from vkbottle.bot import Blueprint
 from .connect import bp as connect_bp
@@ -62,22 +61,4 @@ def event_to_message(event: dict):
     )
 
     return message
-
-
-@bp.on.raw_event(event=GroupEventType.MESSAGE_EDIT)
-async def duplex_edit(event: dict):
-    vk_message = event_to_message(event)
-    
-    if vk_message.group_id == config.vk_group_id:
-        return
-    discord_message_raw = await db_helpers.get_discord_message(vk_message)
-    if not discord_message_raw:
-        return
-
-    channel_id, discord_message_id = discord_message_raw
-    channel = bots.discord_bot.get_channel(channel_id)
-    discord_message = await channel.fetch_message(discord_message_id)
-    discord_message.edit(
-        **(await converter.get_discord_message(vk_message))
-    )
 

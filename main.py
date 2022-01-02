@@ -1,12 +1,8 @@
-from pathlib import Path
 import asyncio
+import config
 from bots import discord_bot
 from bots import vk_bot
 from bots.vk.message_checker import check_messages_periodic
-
-import config
-import db_helpers
-
 from tortoise import Tortoise
 
 

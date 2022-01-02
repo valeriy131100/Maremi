@@ -4,10 +4,8 @@ from typing import Union
 from collections.abc import Iterable
 from vkbottle.bot import Message
 from vkbottle.dispatch.rules import ABCRule
-
-import db_helpers
-from models import ServerChannelAlias, Server
 from tortoise.exceptions import DoesNotExist
+from models import ServerChannelAlias, Server
 
 
 def is_callable(obj):

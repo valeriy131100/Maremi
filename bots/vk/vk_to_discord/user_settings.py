@@ -1,5 +1,4 @@
 import vkbottle.bot
-import db_helpers
 from vkbottle.bot import Blueprint
 from bots.vk.custom_rules import StartsWithRule
 from models import VkNickName
