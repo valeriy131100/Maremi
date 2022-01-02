@@ -1,2 +1,5 @@
 .env
 servers.db
+servers2.db
+servers2.db-shm
+servers2.db-wal

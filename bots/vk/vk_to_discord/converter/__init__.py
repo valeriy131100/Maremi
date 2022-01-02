@@ -2,7 +2,6 @@ import disnake
 import disnake as discord
 import vkbottle.bot
 import bots
-import db_helpers
 import freeimagehost
 from vkbottle_types.objects import MessagesMessageAttachment, \
     WallWallpostAttachment
@@ -12,6 +11,7 @@ from dataclasses import dataclass, field
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
+from models import VkNickName, Server, MessageToMessage
 from .wallpost import make_post_embed
 
 
@@ -44,9 +44,10 @@ async def make_basic_embed(vk_message: vkbottle.bot.Message, text=None):
 
 async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
     user = await vk_message.get_user(fields=['photo_50'])
-    user_nickname = await db_helpers.get_vk_nickname(user.id)
+    user_nickname = (await VkNickName.get_or_none(vk_id=user.id))
     if user_nickname:
-        username = f'{user_nickname} ({user.first_name} {user.last_name})'
+        username = (f'{user_nickname.nickname} '
+                    f'({user.first_name} {user.last_name})')
     else:
         username = f'{user.first_name} {user.last_name}'
 
@@ -161,12 +162,13 @@ async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
         wait=True,
         **(await get_discord_message(vk_message))
     )
-    await db_helpers.save_message(
-        server_id=discord_message.guild.id,
-        channel_id=channel_id,
-        chat_id=vk_message.chat_id,
+    server = await Server.get(server_id=discord_message.guild.id)
+
+    await MessageToMessage.create(
+        server=server,
+        channel_id=discord_message.channel.id,
         vk_message_id=vk_message.conversation_message_id,
         discord_message_id=discord_message.id,
-        timestamp=vk_message.date
+        vk_timestamp=vk_message.date
     )
 

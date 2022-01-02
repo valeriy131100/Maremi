@@ -1,14 +1,9 @@
 import asyncio
 import traceback
-
-import aiosqlite
-from disnake import NotFound
-
-import bots
 from datetime import datetime, timedelta
 
-import db_helpers
-from config import db_file
+import bots
+from models import Server, MessageToMessage
 
 
 def chunk(lst, n):
@@ -16,37 +11,17 @@ def chunk(lst, n):
         yield lst[i:i + n]
 
 
-async def get_chats():
-    async with aiosqlite.connect(db_file) as db:
-        cur = await db.cursor()
-        await cur.execute(
-            'SELECT DISTINCT chat_id FROM MessageToMessage',
-        )
-
-        result = await cur.fetchall()
-        return [row[0] for row in result]
-
-
-async def get_unchecked_messages(chat_id):
-    yesterday = datetime.now() - timedelta(days=1)
-    yesterday_timestamp = yesterday.timestamp()
-    async with aiosqlite.connect(db_file) as db:
-        cur = await db.cursor()
-        await cur.execute(
-            'SELECT vk_message_id '
-            'FROM MessageToMessage '
-            'WHERE (vk_timestamp > :timestamp or vk_timestamp is NULL) '
-            'and chat_id = :chat_id',
-            (yesterday_timestamp, chat_id)
-        )
-        result = await cur.fetchall()
-        return [row[0] for row in result]
-
-
 async def _check_messages():
     api = bots.vk_bot.api
-    for chat_id in await get_chats():
-        messages = await get_unchecked_messages(chat_id)
+    chats = Server.all().order_by('chat_id').values_list('chat_id', flat=True)
+    chats.distinct = True
+    for chat_id in (await chats):
+        yesterday = datetime.now() - timedelta(days=1)
+        yesterday_timestamp = int(yesterday.timestamp())
+        messages = await (MessageToMessage
+                          .filter(server__chat_id=chat_id,
+                                  vk_timestamp__gt=yesterday_timestamp)
+                          .values_list('vk_message_id', flat=True))
         for messages_chunk in chunk(messages, 100):
             checked_messages = await api.messages.get_by_conversation_message_id(
                 peer_id=2000000000 + chat_id,
@@ -59,35 +34,28 @@ async def _check_messages():
                 for message in checked_messages.items:
                     messages_to_remove.remove(message.conversation_message_id)
                 for message in messages_to_remove:
-                    discord_message_raw = await db_helpers.get_discord_message(
-                        chat_id=chat_id,
+                    message_to_message = await MessageToMessage.get_or_none(
+                        server__chat_id=chat_id,
                         vk_message_id=message
                     )
-                    if not discord_message_raw:
+                    if not message_to_message:
                         continue
-
-                    channel_id, discord_message_id = discord_message_raw
-                    channel = bots.discord_bot.get_channel(channel_id)
+                    channel = bots.discord_bot.get_channel(
+                        message_to_message.channel_id
+                    )
                     if not channel:
                         continue
                     try:
                         discord_message = await channel.fetch_message(
-                            discord_message_id
+                            message_to_message.discord_message_id
                         )
-                    except NotFound:
-                        await db_helpers.remove_vk_message(
-                            chat_id=chat_id,
-                            vk_message_id=message
-                        )
-                        continue
-                    await discord_message.delete()
-                    await db_helpers.remove_vk_message(
-                        chat_id=chat_id,
-                        vk_message_id=message
-                    )
+                        await discord_message.delete()
+                    finally:
+                        await message_to_message.delete()
 
 
 async def check_messages_periodic(sleep_time):
+    await asyncio.sleep(sleep_time)
     while True:
         try:
             await _check_messages()
@@ -95,3 +63,4 @@ async def check_messages_periodic(sleep_time):
             traceback.print_exc()
         finally:
             await asyncio.sleep(sleep_time)
+

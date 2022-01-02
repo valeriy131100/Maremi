@@ -6,6 +6,8 @@ from vkbottle.bot import Message
 from vkbottle.dispatch.rules import ABCRule
 
 import db_helpers
+from models import ServerChannelAlias, Server
+from tortoise.exceptions import DoesNotExist
 
 
 def is_callable(obj):
@@ -74,9 +76,15 @@ class AliasRule(ABCRule):
 
     async def check(self, event: Message) -> Union[dict, bool]:
         prefix = self.prefix
-        commands = await db_helpers.get_aliases(chat_id=event.chat_id)
+        try:
+            server = await Server.get(chat_id=event.chat_id)
+        except DoesNotExist:
+            return False
+        commands = ServerChannelAlias.filter(server=server)
         if not commands:
             return False
+        else:
+            commands = [command.alias async for command in commands]
 
         for command in commands:
             if event.text.startswith(f'{prefix}{command} '):

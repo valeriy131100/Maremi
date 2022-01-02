@@ -1,8 +1,8 @@
 import disnake as discord
-import db_helpers
 import bots
 from disnake.ext import commands
 from bots.discord.utils.webhooks import get_server_bot_webhooks_ids
+from models import Server, MessageToMessage
 from . import converter
 from .channels import DiscordToVkChannels
 from .user_settings import DiscordToVkUserSettings
@@ -19,11 +19,14 @@ class DiscordToVk(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         webhooks = await get_server_bot_webhooks_ids(message.guild)
-        if ((await db_helpers.is_duplex_channel(message.guild.id, message.channel.id))
+        server = await Server.get(server_id=message.guild.id)
+        duplex_channel = server.duplex_channel
+        if (message.channel.id == duplex_channel
                 and not message.author == self.bot.user
                 and not message.content.startswith(self.bot.command_prefix)
                 and message.webhook_id not in webhooks):
-            chat_id = await db_helpers.get_server_chat(message.guild.id)
+
+            chat_id = server.chat_id
             await converter.send_to_vk(chat_id, message)
 
     @commands.Cog.listener()
@@ -40,22 +43,22 @@ class DiscordToVk(commands.Cog):
 
         guild = discord_message.guild
         webhooks = await get_server_bot_webhooks_ids(guild)
-        if discord_message := payload.cached_message:
-            if discord_message.webhook_id in webhooks:
-                return
-
-        vk_message = await db_helpers.get_vk_message(
-            discord_message=discord_message
-        )
-
-        if not vk_message:
+        if discord_message.webhook_id in webhooks:
             return
 
-        chat_id, vk_message_id = vk_message
+        message_to_message = await MessageToMessage.get_or_none(
+            channel_id=discord_message.channel.id,
+            discord_message_id=discord_message.id
+        )
+
+        if not message_to_message:
+            return
+
+        chat_id = (await message_to_message.server).chat_id
 
         await bots.vk_bot.api.messages.edit(
             peer_id=2000000000+chat_id,
-            conversation_message_id=vk_message_id,
+            conversation_message_id=message_to_message.vk_message_id,
             **(await converter.get_vk_message(discord_message))
         )
 
@@ -67,19 +70,20 @@ class DiscordToVk(commands.Cog):
             if discord_message.webhook_id in webhooks:
                 return
 
-        vk_message = await db_helpers.get_vk_message(
-            guild_id=payload.guild_id,
+        message_to_message = await MessageToMessage.get_or_none(
             channel_id=payload.channel_id,
-            message_id=payload.message_id
+            discord_message_id=payload.message_id
         )
 
-        if not vk_message:
+        if not message_to_message:
             return
 
-        chat_id, vk_message_id = vk_message
+        chat_id = (await message_to_message.server).chat_id
 
         await bots.vk_bot.api.messages.delete(
             peer_id=2000000000 + chat_id,
-            conversation_message_ids=[vk_message_id],
+            conversation_message_ids=[message_to_message.vk_message_id],
             delete_for_all=True
         )
+
+        await message_to_message.delete()

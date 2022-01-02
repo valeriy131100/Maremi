@@ -2,14 +2,17 @@ import os
 import disnake as discord
 from vkbottle import PhotoMessageUploader
 import bots
-import db_helpers
 from bots.discord.utils.emojis import EMOJI_REGEX, download_file, download_emoji
 from bots.vk.utils import get_random_id
 from datetime import datetime
 
+from models import DiscordNickName, MessageToMessage, Server
+
 
 async def get_vk_message(discord_message: discord.Message):
-    nickname = await db_helpers.get_discord_nickname(discord_message.author.id)
+    nickname = (await DiscordNickName.get_or_none(
+        discord_id=discord_message.author.id
+    ))
     message_text = discord_message.content
     photo_uploader = PhotoMessageUploader(api=bots.vk_bot.api)
     attachments_list = []
@@ -24,7 +27,7 @@ async def get_vk_message(discord_message: discord.Message):
             break
 
     if nickname:
-        author_string = f'{nickname} ({discord_message.author}):'
+        author_string = f'{nickname.nickname} ({discord_message.author}):'
     else:
         author_string = f'{discord_message.author}:'
     message_text = f'{author_string}\n{message_text}'
@@ -54,11 +57,12 @@ async def send_to_vk(chat_id, discord_message: discord.Message):
 
     vk_message_id = vk_message[0].conversation_message_id
 
-    await db_helpers.save_message(
-        server_id=discord_message.guild.id,
+    server = await Server.get(server_id=discord_message.guild.id)
+
+    await MessageToMessage.create(
+        server=server,
         channel_id=discord_message.channel.id,
-        chat_id=chat_id,
         vk_message_id=vk_message_id,
         discord_message_id=discord_message.id,
-        timestamp=datetime.now().timestamp()
+        vk_timestamp=int(datetime.now().timestamp())
     )

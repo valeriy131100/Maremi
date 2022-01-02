@@ -1,7 +1,8 @@
 import disnake as discord
-import db_helpers
 import freeimagehost
 from disnake.ext import commands
+from models import GalleryImages
+from tortoise.functions import Max
 
 
 GALLERY = 'gallery'
@@ -12,8 +13,13 @@ SHOW = 'show'
 EXPAND = 'expand'
 
 
+async def get_gallery_images(gallery_id):
+    gallery = GalleryImages.filter(gallery_id=gallery_id).order_by('id')
+    return [gallery_image.image_url async for gallery_image in gallery]
+
+
 async def get_gallery_message(attachment_id, gallery_id, embed: discord.Embed):
-    attachments = await db_helpers.get_gallery_images(gallery_id)
+    attachments = await get_gallery_images(gallery_id)
     images_count = len(attachments)
     buttons = discord.ui.View()
     back_button = discord.ui.Button(
@@ -43,7 +49,7 @@ async def get_gallery_message(attachment_id, gallery_id, embed: discord.Embed):
 
 async def get_gallery_invite_message(attachment_id, gallery_id,
                                      embed: discord.Embed):
-    attachments = await db_helpers.get_gallery_images(gallery_id)
+    attachments = await get_gallery_images(gallery_id)
     buttons = discord.ui.View()
     back_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
@@ -65,7 +71,7 @@ async def get_gallery_invite_message(attachment_id, gallery_id,
 
 
 async def get_expanded_gallery_message(gallery_id, embed: discord.Embed):
-    attachments = await db_helpers.get_gallery_images(gallery_id)
+    attachments = await get_gallery_images(gallery_id)
     embeds = []
     author = embed.author
     first_embed = True
@@ -94,7 +100,22 @@ async def create_gallery(images, embed=None, upload=True, invite_mode=False):
         )
     else:
         gallery_images = images
-    gallery_id = await db_helpers.create_gallery(gallery_images)
+
+    max_id_gallery = await (GalleryImages
+                            .annotate(max_id=Max('gallery_id'))
+                            .first())
+    if max_id_gallery.max_id is not None:
+        gallery_id = max_id_gallery.max_id + 1
+    else:
+        gallery_id = 0
+
+    gallery_image_objects = [
+        GalleryImages(gallery_id=gallery_id, image_url=image_url)
+        for image_url in gallery_images
+    ]
+
+    await GalleryImages.bulk_create(objects=gallery_image_objects)
+
     if not embed:
         embed = discord.Embed()
     if invite_mode:
@@ -114,7 +135,7 @@ class GalleriesHandler(commands.Cog):
             _, command, attachment_id, gallery_id = payload.split()
             attachment_id = int(attachment_id)
             gallery_id = int(gallery_id)
-            attachments = await db_helpers.get_gallery_images(gallery_id)
+            attachments = await get_gallery_images(gallery_id)
             original_embed = interaction.message.embeds[0]
 
             if command in (NEXT, PREV):

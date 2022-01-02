@@ -1,5 +1,5 @@
 import bots
-import db_helpers
+from models import Server
 from disnake.ext import commands
 
 
@@ -15,7 +15,11 @@ class DiscordToVkConnect(commands.Cog):
             await context.send(f'Это не id чата Вконтакте')
         else:
             if bots.temp['chats'].get(chat_id, False):
-                await db_helpers.connect_server_to_chat(context.guild.id, chat_id, default_channel=context.channel.id)
+                await Server.create(
+                    server_id=context.guild.id,
+                    chat_id=chat_id,
+                    default_channel=context.channel.id
+                )
                 await context.send(f'Сервер {context.guild.id} успешно привязан к чату {chat_id}')
                 await context.send(f'Канал по умолчанию установлен на текущий ({context.channel.id})')
             else:

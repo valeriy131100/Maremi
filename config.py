@@ -14,3 +14,13 @@ discord_prefix = env('DISCORD_PREFIX', default='m.')
 
 db_file = env('DATABASE', default='servers.db')
 freeimagehost_key = env('FREEIMAGEHOST_KEY')
+
+TORTOISE_ORM = {
+    "connections": {"default": "sqlite://servers2.db"},
+    "apps": {
+        "models": {
+            "models": ["aerich.models", "models"],
+            "default_connection": "default",
+        },
+    },
+}

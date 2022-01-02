@@ -1,5 +1,5 @@
-import db_helpers
 from disnake.ext import commands
+from models import DiscordNickName
 
 
 class DiscordToVkUserSettings(commands.Cog):
@@ -8,10 +8,20 @@ class DiscordToVkUserSettings(commands.Cog):
 
     @commands.group(pass_context=True, invoke_without_command=True)
     async def nickname(self, context: commands.Context, nickname):
-        await db_helpers.set_discord_nickname(context.author.id, nickname)
+        await DiscordNickName.update_or_create(
+            discord_id=context.author.id,
+            defaults={
+                'nickname': nickname
+            }
+        )
         await context.send(f'Никнейм {nickname} успешно установлен')
 
     @nickname.command(name='remove')
     async def remove_nickname(self, context: commands.Context):
-        await db_helpers.set_discord_nickname(context.author.id, None)
+        await DiscordNickName.update_or_create(
+            discord_id=context.author.id,
+            defaults={
+                'nickname': ''
+            }
+        )
         await context.send(f'Никнейм успешно удален')
