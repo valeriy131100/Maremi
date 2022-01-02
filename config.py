@@ -12,11 +12,11 @@ vk_check_messages_interval = env.int('VK_CHECK_MESSAGES_INTERVAL', default=60)
 discord_token = env('DISCORD_TOKEN')
 discord_prefix = env('DISCORD_PREFIX', default='m.')
 
-db_file = env('DATABASE', default='servers.db')
+db_file = env('DATABASE', default='sqlite://servers2.db')
 freeimagehost_key = env('FREEIMAGEHOST_KEY')
 
 TORTOISE_ORM = {
-    "connections": {"default": "sqlite://servers2.db"},
+    "connections": {"default": db_file},
     "apps": {
         "models": {
             "models": ["aerich.models", "models"],
