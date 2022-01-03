@@ -66,13 +66,15 @@ class ImageWorking(commands.Cog):
         )
         gallery_images = [attachment.url for attachment in message.attachments]
         if mode in ('i', 'invite'):
-            embed, buttons = await create_gallery(
+            embeds, buttons = await create_gallery(
                 gallery_images,
-                invite_mode=True
+                invite_mode=True,
+                use_multiple_preview=True
             )
         else:
             embed, buttons = await create_gallery(gallery_images)
+            embeds = [embed]
         await message.delete()
         if original_message:
             await original_message.delete()
-        await gallery_message.edit(content='', embed=embed, view=buttons)
+        await gallery_message.edit(content='', embeds=embeds, view=buttons)

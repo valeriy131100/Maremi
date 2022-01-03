@@ -50,15 +50,16 @@ async def get_gallery_message(attachment_id, gallery_id, embed: discord.Embed):
 async def get_gallery_invite_message(attachment_id, gallery_id,
                                      embed: discord.Embed):
     attachments = await get_gallery_images(gallery_id)
+    attachments_count = len(attachments)
     buttons = discord.ui.View()
     back_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
-        label='Посмотреть как галерею',
+        label=f'Посмотреть как галерею ({attachments_count})',
         custom_id=f'{GALLERY} {SHOW} {attachment_id} {gallery_id}',
     )
     next_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
-        label='Посмотреть все сразу',
+        label=f'Посмотреть все сразу ({attachments_count})',
         custom_id=f'{GALLERY} {EXPAND} {attachment_id} {gallery_id}',
     )
 
@@ -93,7 +94,8 @@ async def get_expanded_gallery_message(gallery_id, embed: discord.Embed):
     return embeds
 
 
-async def create_gallery(images, embed=None, upload=True, invite_mode=False):
+async def create_gallery(images, embed=None, upload=True, invite_mode=False,
+                         use_multiple_preview=False):
     if upload:
         gallery_images = await freeimagehost.multiple_upload_and_get_url(
             images
@@ -118,10 +120,28 @@ async def create_gallery(images, embed=None, upload=True, invite_mode=False):
 
     if not embed:
         embed = discord.Embed()
+
     if invite_mode:
-        return await get_gallery_invite_message(0, gallery_id, embed)
+        embed, buttons = await get_gallery_invite_message(0, gallery_id, embed)
     else:
-        return await get_gallery_message(0, gallery_id, embed)
+        embed, buttons = await get_gallery_message(0, gallery_id, embed)
+
+    if not use_multiple_preview:
+        return embed, buttons
+    else:
+        embeds = []
+        if not embed.url:
+            embed.url = 'https://example.com'
+
+        for i, image_url in enumerate(gallery_images[:3]):
+            if i == 0:
+                embeds.append(embed)
+            else:
+                preview_embed = discord.Embed(url=embed.url)
+                preview_embed.set_image(url=image_url)
+                embeds.append(preview_embed)
+
+        return embeds, buttons
 
 
 class GalleriesHandler(commands.Cog):

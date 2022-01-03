@@ -99,19 +99,20 @@ async def process_images(images, embed: disnake.Embed):
     images_count = len(images)
     if images_count == 0:
         buttons = discord.ui.View()
-        return embed, buttons
+        return [embed], buttons
     elif images_count == 1:
         embed.set_image(images[0])
         buttons = discord.ui.View()
-        return embed, buttons
+        return [embed], buttons
     elif images_count > 1:
-        embed, buttons = await create_gallery(
+        embeds, buttons = await create_gallery(
             images,
             embed=embed,
             upload=False,
-            invite_mode=True
+            invite_mode=True,
+            use_multiple_preview=True
         )
-        return embed, buttons
+        return embeds, buttons
 
 
 async def process_files(files, embed: disnake.Embed):
@@ -144,11 +145,11 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     )
 
     embed = await process_files(media.files, embed)
-    embed, buttons = await process_images(media.images, embed)
+    embeds, buttons = await process_images(media.images, embed)
 
     return {
         'content': vk_message.text,
-        'embed': embed,
+        'embeds': embeds,
         'avatar_url': avatar_url,
         'username': username,
         'view': buttons
