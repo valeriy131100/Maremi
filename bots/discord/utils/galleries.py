@@ -177,7 +177,8 @@ class GalleriesHandler(commands.Cog):
                     embed=embed,
                     view=buttons
                 )
-
+            elif command == NUM:
+                await interaction.response.defer()
             elif command in (SHOW, EXPAND):
                 if command == SHOW:
                     embed, buttons = await get_gallery_message(
