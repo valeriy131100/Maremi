@@ -99,7 +99,7 @@ async def process_images(images, embed: disnake.Embed):
     images_count = len(images)
     if images_count == 0:
         buttons = discord.ui.View()
-        return [embed], buttons
+        return [embed] if embed else [], buttons
     elif images_count == 1:
         embed.set_image(images[0])
         buttons = discord.ui.View()
