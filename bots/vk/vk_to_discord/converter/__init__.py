@@ -134,6 +134,7 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     username, avatar_url = await get_user_info_from_vk_message(vk_message)
     media = await process_attachments(vk_message.attachments)
     embed = None
+    text = vk_message.text
 
     if media.embed_type == EMBED_TYPE_POST:
         embed = await make_post_embed(*media.embed_args)
@@ -147,12 +148,18 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     embed = await process_files(media.files, embed)
     embeds, buttons = await process_images(media.images, embed)
 
+    if reply_message := vk_message.reply_message:
+        if reply_message.text:
+            lines = reply_message.text.split('\n')
+            formatted_lines = ''.join(f'> {line}\n' for line in lines)
+            text = f'{formatted_lines}{text}'
+
     return {
-        'content': vk_message.text,
+        'content': text,
         'embeds': embeds,
         'avatar_url': avatar_url,
         'username': username,
-        'view': buttons
+        'view': buttons,
     }
 
 
