@@ -9,18 +9,24 @@ class DiscordToVkChannels(commands.Cog):
 
     @commands.group(pass_context=True, invoke_without_command=True)
     async def alias(self, context: commands.Context, alias_word):
-        try:
-            server = await Server.get(server_id=context.guild.id)
-            await ServerChannelAlias.create(
-                server=server,
-                channel_id=context.channel.id,
-                alias=alias_word
-            )
-        except IntegrityError:
-            await context.send(f'Подобный алиас уже существует. Используйте {context.prefix}alias remove')
-        else:
-            await context.send(f'Алиас {alias_word} для канала был создан. Используйте #{alias_word} в вк-боте, '
-                               f'чтобы слать сюда сообщения.')
+        server = await Server.get(server_id=context.guild.id)
+        is_always_created = await ServerChannelAlias.filter(
+            channel_id=context.channel.id,
+            alias=alias_word
+        )
+        if is_always_created:
+            await context.send(f'Подобный алиас уже существует.'
+                               f' Используйте {context.prefix}alias remove')
+            return
+
+        await ServerChannelAlias.create(
+            server=server,
+            channel_id=context.channel.id,
+            alias=alias_word
+        )
+        await context.send(f'Алиас {alias_word} для канала был создан. '
+                           f'Используйте #{alias_word} в вк-боте, '
+                           f'чтобы слать сюда сообщения.')
 
     @alias.command(name='remove')
     async def remove_alias(self, context: commands.Context, alias_word):
