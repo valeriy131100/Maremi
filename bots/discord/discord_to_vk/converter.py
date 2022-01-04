@@ -50,8 +50,24 @@ async def get_vk_message(discord_message: discord.Message):
 
 
 async def send_to_vk(chat_id, discord_message: discord.Message):
+    forward = None
+    peer_id = 2000000000 + chat_id
+
+    if reply_message := discord_message.reference:
+        reply_message_to_message = await MessageToMessage.get_or_none(
+            server__chat_id=chat_id,
+            discord_message_id=reply_message.message_id
+        )
+        reply_to = reply_message_to_message.vk_message_id
+        forward = {
+            'peer_id': peer_id,
+            'conversation_message_ids': [reply_to],
+            'is_reply': 1
+        }
+
     vk_message = await bots.vk_bot.api.messages.send(
-        peer_ids=[2000000000+chat_id],
+        peer_ids=[peer_id],
+        forward=forward,
         **(await get_vk_message(discord_message))
     )
 

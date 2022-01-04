@@ -21,7 +21,17 @@ class DiscordToVk(commands.Cog):
         webhooks = await get_server_bot_webhooks_ids(message.guild)
         server = await Server.get(server_id=message.guild.id)
         duplex_channel = server.duplex_channel
-        if (message.channel.id == duplex_channel
+        reply_message_to_message = None
+        if reply_message := message.reference:
+            reply_message_to_message = await MessageToMessage.get_or_none(
+                server=server,
+                discord_message_id=reply_message.message_id
+            )
+
+        need_to_send = ((message.channel.id == duplex_channel)
+                        or reply_message_to_message)
+
+        if (need_to_send
                 and not message.author == self.bot.user
                 and not message.content.startswith(self.bot.command_prefix)
                 and message.webhook_id not in webhooks):
@@ -59,6 +69,7 @@ class DiscordToVk(commands.Cog):
         await bots.vk_bot.api.messages.edit(
             peer_id=2000000000+chat_id,
             conversation_message_id=message_to_message.vk_message_id,
+            keep_forward_messages=1,
             **(await converter.get_vk_message(discord_message))
         )
 
