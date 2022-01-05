@@ -67,8 +67,10 @@ async def process_attachments(attachments: List[
             media.images.append(photo_size.url)
         elif doc := attachment.doc:
             media.embed_type = EMBED_TYPE_BASIC
-            if doc.type in (DOC_IMAGE_TYPE, DOC_GIF_TYPE):
+            if doc.type == DOC_IMAGE_TYPE:
                 media.images.append(doc.url)
+            elif doc.type == DOC_GIF_TYPE:
+                media.gif_images.append(doc.url)
             else:
                 media.files[doc.title] = doc.url
         elif isinstance(attachment, MessagesMessageAttachment):
@@ -94,7 +96,6 @@ async def process_attachments(attachments: List[
 
 
 async def process_images(images, embed: disnake.Embed):
-    images = await freeimagehost.multiple_upload_and_get_url(images)
     images_count = len(images)
     if images_count == 0:
         buttons = discord.ui.View()
@@ -139,6 +140,10 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
         embed = await make_post_embed(*media.embed_args)
     elif media.embed_type == EMBED_TYPE_BASIC:
         embed = await make_basic_embed(vk_message)
+
+    media.images.extend(
+        await freeimagehost.multiple_upload_and_get_url(media.gif_images)
+    )
 
     embed = await process_files(media.files, embed)
     embeds, buttons = await process_images(media.images, embed)
