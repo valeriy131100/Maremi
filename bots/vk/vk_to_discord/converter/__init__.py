@@ -4,9 +4,10 @@ import vkbottle.bot
 import bots
 import freeimagehost
 from vkbottle_types.objects import MessagesMessageAttachment, \
-    WallWallpostAttachment
+    WallWallpostAttachment, AudioAudio
 from datetime import datetime
 from typing import Union, List, Dict, Any
+from urllib.parse import quote_plus
 from dataclasses import dataclass, field
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
@@ -22,18 +23,23 @@ EMBED_TYPE_NULL = 'embed_type_null'
 EMBED_TYPE_POST = 'embed_type_post'
 EMBED_TYPE_BASIC = 'embed_type_basic'
 
+SPOTIFY_SEARCH = 'https://open.spotify.com/search/{}'
+YOUTUBE_SEARCH = 'https://www.youtube.com/results?search_query={}'
+
 
 @dataclass
 class ProcessedAttachments:
     images: List[str] = field(default_factory=list)
     gif_images: List[str] = field(default_factory=list)
     files: Dict[str, str] = field(default_factory=dict)
+    audios: List[AudioAudio] = field(default_factory=list)
     embed_type: str = EMBED_TYPE_NULL
     embed_args: List[Any] = field(default_factory=list)
 
     def extend(self, other):
         self.images.extend(other.images)
         self.gif_images.extend(other.gif_images)
+        self.audios.extend(other.audios)
         self.files = {**other.files, **other.files}
 
 
@@ -78,6 +84,9 @@ async def process_attachments(attachments: List[
                 media.gif_images.append(doc.url)
             else:
                 media.files[doc.title] = doc.url
+        elif audio := attachment.audio:
+            media.embed_type = EMBED_TYPE_BASIC
+            media.audios.append(audio)
         elif isinstance(attachment, MessagesMessageAttachment):
             if sticker := attachment.sticker:
                 media.embed_type = EMBED_TYPE_BASIC
@@ -120,13 +129,37 @@ async def process_images(images, embed: disnake.Embed):
 
 async def process_files(files, embed: disnake.Embed):
     if files:
-        docs = ''
-        for doc_name, doc_url in files.items():
-            docs = (f'{docs}\n'
-                    f'[{doc_name}]({doc_url})')
+        docs = '\n'.join([f'[{doc_name}]({doc_url})'
+                          for doc_name, doc_url in files.items()])
         embed.add_field(
             name='Документы',
             value=docs
+        )
+
+    return embed
+
+
+async def process_audios(audios: List[AudioAudio], embed: disnake.Embed):
+    if audios:
+        prepared_audios = [
+            (
+                audio.artist,
+                audio.title,
+                quote_plus(f"{audio.artist} {audio.title}")
+            )
+            for audio in audios
+        ]
+
+        audios_descriptions = [
+            (f'{artist} - {title}\n'
+             f'[Youtube]({YOUTUBE_SEARCH.format(url_title)}) '
+             f'[Spotify]({SPOTIFY_SEARCH.format(url_title)})')
+            for artist, title, url_title in prepared_audios
+        ]
+
+        embed.add_field(
+            name='Музыка',
+            value='\n'.join(audios_descriptions)
         )
 
     return embed
@@ -149,6 +182,8 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     )
 
     embed = await process_files(media.files, embed)
+    embed = await process_audios(media.audios, embed)
+
     embeds, buttons = await process_images(media.images, embed)
 
     if reply_message := vk_message.reply_message:
