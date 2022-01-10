@@ -152,7 +152,7 @@ async def process_audios(audios: List[AudioAudio], embed: disnake.Embed):
 
         audios_descriptions = [
             (f'{artist} - {title}\n'
-             f'[Youtube]({YOUTUBE_SEARCH.format(url_title)}) '
+             f'[Youtube]({YOUTUBE_SEARCH.format(url_title)}) | '
              f'[Spotify]({SPOTIFY_SEARCH.format(url_title)})')
             for artist, title, url_title in prepared_audios
         ]
