@@ -7,7 +7,7 @@ from vkbottle_types.objects import MessagesMessageAttachment, \
     WallWallpostAttachment, AudioAudio
 from datetime import datetime
 from typing import Union, List, Dict, Any
-from urllib.parse import quote_plus
+from urllib.parse import quote
 from dataclasses import dataclass, field
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
@@ -145,7 +145,7 @@ async def process_audios(audios: List[AudioAudio], embed: disnake.Embed):
             (
                 audio.artist,
                 audio.title,
-                quote_plus(f"{audio.artist} {audio.title}")
+                quote(f"{audio.artist} {audio.title}")
             )
             for audio in audios
         ]
