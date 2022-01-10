@@ -31,6 +31,11 @@ class ProcessedAttachments:
     embed_type: str = EMBED_TYPE_NULL
     embed_args: List[Any] = field(default_factory=list)
 
+    def extend(self, other):
+        self.images.extend(other.images)
+        self.gif_images.extend(other.gif_images)
+        self.files = {**other.files, **other.files}
+
 
 async def make_basic_embed(vk_message: vkbottle.bot.Message, text=None):
     timestamp = datetime.utcfromtimestamp(vk_message.date)
@@ -88,9 +93,7 @@ async def process_attachments(attachments: List[
                     post_media = (
                         await process_attachments(post.attachments)
                     )
-                    media.images.extend(post_media.images)
-                    media.gif_images.extend(post_media.gif_images)
-                    media.files = {**media.files, **post_media.files}
+                    media.extend(post_media)
 
     return media
 
