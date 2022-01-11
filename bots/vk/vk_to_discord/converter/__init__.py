@@ -7,12 +7,12 @@ from vkbottle_types.objects import MessagesMessageAttachment, \
     WallWallpostAttachment, AudioAudio
 from datetime import datetime
 from typing import Union, List, Dict, Any
-from urllib.parse import quote
 from dataclasses import dataclass, field
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
 from models import VkNickName, Server, MessageToMessage
+from .music import process_audios
 from .wallpost import make_post_embed
 
 
@@ -22,9 +22,6 @@ DOC_IMAGE_TYPE = 4
 EMBED_TYPE_NULL = 'embed_type_null'
 EMBED_TYPE_POST = 'embed_type_post'
 EMBED_TYPE_BASIC = 'embed_type_basic'
-
-SPOTIFY_SEARCH = 'https://open.spotify.com/search/{}'
-YOUTUBE_SEARCH = 'https://www.youtube.com/results?search_query={}'
 
 
 @dataclass
@@ -134,32 +131,6 @@ async def process_files(files, embed: disnake.Embed):
         embed.add_field(
             name='Документы',
             value=docs
-        )
-
-    return embed
-
-
-async def process_audios(audios: List[AudioAudio], embed: disnake.Embed):
-    if audios:
-        prepared_audios = [
-            (
-                audio.artist,
-                audio.title,
-                quote(f"{audio.artist} {audio.title}")
-            )
-            for audio in audios
-        ]
-
-        audios_descriptions = [
-            (f'{artist} - {title}\n'
-             f'[Youtube]({YOUTUBE_SEARCH.format(url_title)}) | '
-             f'[Spotify]({SPOTIFY_SEARCH.format(url_title)})')
-            for artist, title, url_title in prepared_audios
-        ]
-
-        embed.add_field(
-            name='Музыка',
-            value='\n'.join(audios_descriptions)
         )
 
     return embed
