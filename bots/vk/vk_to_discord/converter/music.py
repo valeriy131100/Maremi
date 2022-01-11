@@ -33,28 +33,21 @@ async def format_spotify_track_link(song_name):
 
 
 async def process_audios(audios: List[AudioAudio], embed: discord.Embed):
-    if audios:
-        prepared_audios = [
-            (
-                audio.artist,
-                audio.title,
-                quote(f"{audio.artist} {audio.title}"),
-                f'https://vk.com/audio{audio.owner_id}_{audio.id}'
-            )
-            for audio in audios
-        ]
+    for audio in audios:
+        title = f'{audio.artist} {audio.title}'
+        url_title = quote(title)
+        vk_track_url = f'https://vk.com/audio{audio.owner_id}_{audio.id}'
 
-        for artist, title, url_title, vk_track_url in prepared_audios:
-            audios_description = (
-                f'{artist} - {title}\n'
-                f'{await format_spotify_track_link(song_name=title)}'
-                f'[VK Track]({vk_track_url}) | '
-                f'[Search Youtube]({YOUTUBE_SEARCH.format(url_title)})'
-            )
+        audios_description = (
+            f'{audio.artist} - {audio.title}\n'
+            f'{await format_spotify_track_link(song_name=title)}'
+            f'[VK Track]({vk_track_url}) | '
+            f'[Search Youtube]({YOUTUBE_SEARCH.format(url_title)})'
+        )
 
-            embed.add_field(
-                name='Аудиозапись',
-                value=audios_description
-            )
+        embed.add_field(
+            name='Аудиозапись',
+            value=audios_description
+        )
 
     return embed
