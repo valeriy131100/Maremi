@@ -34,7 +34,6 @@ async def format_spotify_track_link(song_name):
 
 async def process_audios(audios: List[AudioAudio], embed: discord.Embed):
     if audios:
-        print(audios[0])
         prepared_audios = [
             (
                 audio.artist,
