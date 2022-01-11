@@ -130,7 +130,8 @@ async def process_files(files, embed: disnake.Embed):
                           for doc_name, doc_url in files.items()])
         embed.add_field(
             name='Документы',
-            value=docs
+            value=docs,
+            inline=False
         )
 
     return embed

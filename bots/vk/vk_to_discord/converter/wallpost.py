@@ -45,7 +45,8 @@ async def make_post_embed(post: WallWallpostFull):
 
     embed.add_field(
         name='⁠',
-        value=post_stats
+        value=post_stats,
+        inline=False
     )
 
     return embed
