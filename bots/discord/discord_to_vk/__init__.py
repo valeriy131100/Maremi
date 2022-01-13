@@ -1,12 +1,14 @@
 import disnake as discord
-import bots
 from disnake.ext import commands
+
+import bots
 from bots.discord.utils.webhooks import get_server_bot_webhooks_ids
-from models import Server, MessageToMessage
+from models import MessageToMessage, Server
+
 from . import converter
 from .channels import DiscordToVkChannels
-from .user_settings import DiscordToVkUserSettings
 from .connect import DiscordToVkConnect
+from .user_settings import DiscordToVkUserSettings
 
 
 class DiscordToVk(commands.Cog):

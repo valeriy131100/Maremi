@@ -1,10 +1,12 @@
 import disnake as discord
-import config
 from disnake.ext import commands
+
+import config
+from bots.help_message_formatter import format_help_message
+
 from .discord_to_vk import DiscordToVk
 from .image_working import ImageWorking
 from .utils import Utils
-from bots.help_message_formatter import format_help_message
 
 discord_bot = commands.Bot(
     command_prefix=config.discord_prefix,

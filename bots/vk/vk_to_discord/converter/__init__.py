@@ -1,20 +1,22 @@
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Dict, List, Union
+
 import disnake
 import disnake as discord
 import vkbottle.bot
+from vkbottle_types.objects import (AudioAudio, MessagesMessageAttachment,
+                                    WallWallpostAttachment)
+
 import bots
 import freeimagehost
-from vkbottle_types.objects import MessagesMessageAttachment, \
-    WallWallpostAttachment, AudioAudio
-from datetime import datetime
-from typing import Union, List, Dict, Any
-from dataclasses import dataclass, field
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
-from models import VkNickName, Server, MessageToMessage
+from models import MessageToMessage, Server, VkNickName
+
 from .music import process_audios
 from .wallpost import make_post_embed
-
 
 DOC_GIF_TYPE = 3
 DOC_IMAGE_TYPE = 4

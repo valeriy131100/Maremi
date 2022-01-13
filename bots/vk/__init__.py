@@ -1,8 +1,10 @@
 import vkbottle.bot
+
 from bots.help_message_formatter import format_help_message
 from config import vk_token
-from .vk_to_discord import bp as vk_to_discord_bp
+
 from .custom_rules import StartsWithRule
+from .vk_to_discord import bp as vk_to_discord_bp
 
 
 def load_child_bps(bps, bot):

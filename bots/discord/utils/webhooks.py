@@ -1,4 +1,4 @@
-from disnake import TextChannel, Webhook, Guild
+from disnake import Guild, TextChannel, Webhook
 
 
 async def get_or_create_channel_send_webhook(channel: TextChannel) -> Webhook:

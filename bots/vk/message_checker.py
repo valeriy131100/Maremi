@@ -3,7 +3,7 @@ import traceback
 from datetime import datetime, timedelta
 
 import bots
-from models import Server, MessageToMessage
+from models import MessageToMessage, Server
 
 
 def chunk(lst, n):

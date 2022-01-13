@@ -1,13 +1,13 @@
 import vkbottle.bot
-from vkbottle_types.events import GroupEventType
-import bots
-import config
-from . import converter
 from vkbottle.bot import Blueprint
+
+import bots
+from bots.vk.custom_rules import AliasRule, NotStartsWithRule, StartsWithRule
+from models import MessageToMessage, Server, ServerChannelAlias
+
+from . import converter
 from .connect import bp as connect_bp
 from .user_settings import bp as user_bp
-from bots.vk.custom_rules import StartsWithRule, AliasRule, NotStartsWithRule
-from models import Server, ServerChannelAlias, MessageToMessage
 
 bp = Blueprint('send_to_discord')
 bp.child_bps = [connect_bp, user_bp]

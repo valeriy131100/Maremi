@@ -1,6 +1,7 @@
+from disnake.ext import commands
+
 import bots
 from models import Server
-from disnake.ext import commands
 
 
 class DiscordToVkConnect(commands.Cog):

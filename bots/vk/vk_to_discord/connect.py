@@ -1,6 +1,7 @@
 import vkbottle
-import bots
 from vkbottle.bot import Blueprint
+
+import bots
 from bots.vk.custom_rules import StartsWithRule
 
 bp = Blueprint('vk_to_discord_connect')

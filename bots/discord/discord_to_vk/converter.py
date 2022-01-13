@@ -1,11 +1,13 @@
 import os
-import disnake as discord
-from vkbottle import PhotoMessageUploader
-import bots
-from bots.discord.utils.emojis import EMOJI_REGEX, download_file, download_emoji
-from bots.vk.utils import get_random_id
 from datetime import datetime
 
+import disnake as discord
+from vkbottle import PhotoMessageUploader
+
+import bots
+from bots.discord.utils.emojis import (EMOJI_REGEX, download_emoji,
+                                       download_file)
+from bots.vk.utils import get_random_id
 from models import DiscordNickName, MessageToMessage, Server
 
 

@@ -1,9 +1,9 @@
 import disnake as discord
-import freeimagehost
 from disnake.ext import commands
-from models import GalleryImages
 from tortoise.functions import Max
 
+import freeimagehost
+from models import GalleryImages
 
 GALLERY = 'gallery'
 PREV = 'prev'

@@ -1,10 +1,12 @@
+from typing import List
+from urllib.parse import quote
+
 import disnake as discord
 from spotipy2 import Spotify
 from spotipy2.auth import ClientCredentialsFlow
 from spotipy2.types import Track
 from vkbottle_types.objects import AudioAudio
-from typing import List
-from urllib.parse import quote
+
 from config import spotify_client_id, spotify_client_secret
 
 YOUTUBE_SEARCH = 'https://www.youtube.com/results?search_query={}'

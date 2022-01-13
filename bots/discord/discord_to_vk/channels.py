@@ -1,6 +1,7 @@
 from disnake.ext import commands
+from tortoise.exceptions import DoesNotExist
+
 from models import Server, ServerChannelAlias
-from tortoise.exceptions import DoesNotExist, IntegrityError
 
 
 class DiscordToVkChannels(commands.Cog):

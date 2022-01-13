@@ -1,11 +1,13 @@
 import types
-import config
-from typing import Union
 from collections.abc import Iterable
+from typing import Union
+
+from tortoise.exceptions import DoesNotExist
 from vkbottle.bot import Message
 from vkbottle.dispatch.rules import ABCRule
-from tortoise.exceptions import DoesNotExist
-from models import ServerChannelAlias, Server
+
+import config
+from models import Server, ServerChannelAlias
 
 
 def is_callable(obj):
