@@ -39,7 +39,7 @@ class ProcessedAttachments:
         self.images.extend(other.images)
         self.gif_images.extend(other.gif_images)
         self.audios.extend(other.audios)
-        self.files = {**other.files, **other.files}
+        self.files = {**self.files, **other.files}
 
 
 async def make_basic_embed(vk_message: vkbottle.bot.Message, text=None):
