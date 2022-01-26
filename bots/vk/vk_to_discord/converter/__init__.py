@@ -11,7 +11,7 @@ from vkbottle_types.objects import (AudioAudio, MessagesMessageAttachment,
 import bots
 import freeimagehost
 from bots.discord.utils.galleries import create_gallery
-from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
+from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
 from models import MessageToMessage, Server, VkNickName
 
@@ -176,7 +176,7 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
 
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):
     channel = bots.discord_bot.get_channel(channel_id)
-    webhook = await get_or_create_channel_send_webhook(channel)
+    webhook = await get_channel_send_webhook(channel)
     discord_message = await webhook.send(
         wait=True,
         **(await get_discord_message(vk_message))

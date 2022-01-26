@@ -1,7 +1,7 @@
 from disnake import Guild, TextChannel, Webhook
 
 
-async def get_or_create_channel_send_webhook(channel: TextChannel) -> Webhook:
+async def get_channel_send_webhook(channel: TextChannel) -> Webhook:
     webhooks = await channel.webhooks()
     for webhook in webhooks:
         if webhook.name.startswith('MaremiSendWebhook'):

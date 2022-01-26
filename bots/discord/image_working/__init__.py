@@ -3,7 +3,7 @@ from disnake.ext import commands
 
 import freeimagehost
 from bots.discord.utils.galleries import create_gallery
-from bots.discord.utils.webhooks import get_or_create_channel_send_webhook
+from bots.discord.utils.webhooks import get_channel_send_webhook
 
 
 class ImageWorking(commands.Cog):
@@ -17,12 +17,12 @@ class ImageWorking(commands.Cog):
             if attaches := ref_message.attachments:
                 author_name = ref_message.author.display_name
                 author_avatar = ref_message.author.avatar.url
-                webhook = await get_or_create_channel_send_webhook(
-                    context.channel
-                )
+                webhook = await get_channel_send_webhook(context.channel)
                 first_embed = True
                 for attach in attaches:
-                    image_url = await freeimagehost.upload_and_get_url(attach.url)
+                    image_url = await freeimagehost.upload_and_get_url(
+                        attach.url
+                    )
                     timestamp = ref_message.created_at
                     embed = discord.Embed(timestamp=timestamp)
                     embed.set_image(url=image_url)
@@ -59,7 +59,7 @@ class ImageWorking(commands.Cog):
 
         author_name = message.author.display_name
         author_avatar = message.author.avatar.url
-        webhook = await get_or_create_channel_send_webhook(context.channel)
+        webhook = await get_channel_send_webhook(context.channel)
 
         images_count = len(message.attachments)
         if images_count < 2:
