@@ -22,10 +22,11 @@ async def get_gallery_images(gallery_id):
     if gallery_images := cached_galleries.get(gallery_id):
         return gallery_images
     else:
-        gallery = GalleryImages.filter(gallery_id=gallery_id).order_by('id')
-        gallery_images = [
-            gallery_image.image_url async for gallery_image in gallery
-        ]
+        gallery_images = await (
+            GalleryImages.filter(gallery_id=gallery_id)
+                         .order_by('id')
+                         .values_list('image_url', flat=True)
+        )
         cached_galleries[gallery_id] = gallery_images
         return gallery_images
 
