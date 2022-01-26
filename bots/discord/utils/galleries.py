@@ -1,3 +1,5 @@
+from typing import Optional
+
 import disnake as discord
 from disnake.ext import commands
 from tortoise.functions import Max
@@ -31,24 +33,45 @@ async def get_gallery_images(gallery_id):
         return gallery_images
 
 
-async def get_gallery_message(attachment_id, gallery_id, embed: discord.Embed):
+async def clear_buttons_from_gallery(buttons: discord.ui.View):
+    elems_to_remove = []
+
+    for elem in buttons.children:
+        try:
+            if elem.custom_id.startswith(GALLERY):
+                elems_to_remove.append(elem)
+        except AttributeError:
+            continue
+
+    for elem in elems_to_remove:
+        buttons.remove_item(elem)
+
+    return buttons
+
+
+async def get_gallery_message(attachment_id,
+                              gallery_id,
+                              embed: discord.Embed,
+                              buttons: discord.ui.View):
     attachments = await get_gallery_images(gallery_id)
     images_count = len(attachments)
-    buttons = discord.ui.View()
     back_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
         label='Назад',
         custom_id=f'{GALLERY} {PREV} {attachment_id} {gallery_id}',
+        row=4
     )
     num_button = discord.ui.Button(
         style=discord.ButtonStyle.secondary,
         label=f'{attachment_id + 1}/{images_count}',
-        custom_id=f'{GALLERY} {NUM} {attachment_id} {gallery_id}'
+        custom_id=f'{GALLERY} {NUM} {attachment_id} {gallery_id}',
+        row=4
     )
     next_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
         label='Вперёд',
         custom_id=f'{GALLERY} {NEXT} {attachment_id} {gallery_id}',
+        row=4
     )
 
     buttons.add_item(back_button)
@@ -60,24 +83,27 @@ async def get_gallery_message(attachment_id, gallery_id, embed: discord.Embed):
     return embed, buttons
 
 
-async def get_gallery_invite_message(attachment_id, gallery_id,
-                                     embed: discord.Embed):
+async def get_gallery_invite_message(attachment_id,
+                                     gallery_id,
+                                     embed: discord.Embed,
+                                     buttons: discord.ui.View):
     attachments = await get_gallery_images(gallery_id)
     attachments_count = len(attachments)
-    buttons = discord.ui.View()
-    back_button = discord.ui.Button(
+    gallery_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
         label=f'Посмотреть как галерею ({attachments_count})',
         custom_id=f'{GALLERY} {SHOW} {attachment_id} {gallery_id}',
+        row=4
     )
-    next_button = discord.ui.Button(
+    all_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
         label=f'Посмотреть все сразу ({attachments_count})',
         custom_id=f'{GALLERY} {EXPAND} {attachment_id} {gallery_id}',
+        row=4
     )
 
-    buttons.add_item(back_button)
-    buttons.add_item(next_button)
+    buttons.add_item(gallery_button)
+    buttons.add_item(all_button)
 
     embed.set_image(url=attachments[attachment_id])
 
@@ -107,7 +133,11 @@ async def get_expanded_gallery_message(gallery_id, embed: discord.Embed):
     return embeds
 
 
-async def create_gallery(images, embed=None, upload=True, invite_mode=False,
+async def create_gallery(images,
+                         embed: Optional[discord.Embed] = None,
+                         buttons: Optional[discord.ui.View] = None,
+                         upload=True,
+                         invite_mode=False,
                          use_multiple_preview=False):
     if upload:
         gallery_images = await freeimagehost.multiple_upload_and_get_url(
@@ -134,10 +164,18 @@ async def create_gallery(images, embed=None, upload=True, invite_mode=False,
     if not embed:
         embed = discord.Embed()
 
-    if invite_mode:
-        embed, buttons = await get_gallery_invite_message(0, gallery_id, embed)
-    else:
-        embed, buttons = await get_gallery_message(0, gallery_id, embed)
+    if not buttons:
+        buttons = discord.ui.View()
+
+    get_message = (get_gallery_invite_message if invite_mode
+                   else get_gallery_message)
+
+    embed, buttons = await get_message(
+        attachment_id=0,
+        gallery_id=gallery_id,
+        embed=embed,
+        buttons=buttons
+    )
 
     if not use_multiple_preview:
         return embed, buttons
@@ -169,7 +207,12 @@ class GalleriesHandler(commands.Cog):
             attachment_id = int(attachment_id)
             gallery_id = int(gallery_id)
             attachments = await get_gallery_images(gallery_id)
+
+            message = interaction.message
             original_embed = interaction.message.embeds[0]
+            original_buttons = await clear_buttons_from_gallery(
+                discord.ui.View.from_message(message)
+            )
 
             if command in (NEXT, PREV):
                 if command == NEXT:
@@ -184,7 +227,10 @@ class GalleriesHandler(commands.Cog):
                         attachment_id -= 1
 
                 embed, buttons = await get_gallery_message(
-                    attachment_id, gallery_id, original_embed
+                    attachment_id,
+                    gallery_id,
+                    original_embed,
+                    original_buttons
                 )
                 await interaction.response.edit_message(
                     embed=embed,
@@ -195,7 +241,10 @@ class GalleriesHandler(commands.Cog):
             elif command in (SHOW, EXPAND):
                 if command == SHOW:
                     embed, buttons = await get_gallery_message(
-                        attachment_id, gallery_id, original_embed
+                        attachment_id,
+                        gallery_id,
+                        original_embed,
+                        original_buttons
                     )
                     await interaction.response.send_message(
                         embed=embed,
