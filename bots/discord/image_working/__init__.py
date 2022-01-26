@@ -56,14 +56,22 @@ class ImageWorking(commands.Cog):
             original_message = context.message
         else:
             message = context.message
+
+        author_name = message.author.display_name
+        author_avatar = message.author.avatar.url
+        webhook = await get_or_create_channel_send_webhook(context.channel)
+
         images_count = len(message.attachments)
         if images_count < 2:
             await context.send(
                 'Недостаточно вложений для создания галереи'
             )
             return
-        gallery_message = await context.send(
-            f'Загружаю {images_count} изображений'
+        gallery_message = await webhook.send(
+            f'Загружаю {images_count} изображений',
+            wait=True,
+            username=author_name,
+            avatar_url=author_avatar
         )
         gallery_images = [attachment.url for attachment in message.attachments]
         if mode in ('n', 'noninvite'):
