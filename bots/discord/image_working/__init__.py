@@ -66,10 +66,10 @@ class ImageWorking(commands.Cog):
             f'Загружаю {images_count} изображений'
         )
         gallery_images = [attachment.url for attachment in message.attachments]
-        if mode in ('i', 'invite'):
+        if mode in ('n', 'noninvite'):
             embeds, buttons = await create_gallery(
                 gallery_images,
-                invite_mode=True,
+                invite_mode=False,
                 use_multiple_preview=True
             )
         else:

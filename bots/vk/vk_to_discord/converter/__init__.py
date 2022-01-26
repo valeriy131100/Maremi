@@ -120,7 +120,6 @@ async def process_images(images, embed: disnake.Embed):
             images,
             embed=embed,
             upload=False,
-            invite_mode=True,
             use_multiple_preview=True
         )
         return embeds, buttons

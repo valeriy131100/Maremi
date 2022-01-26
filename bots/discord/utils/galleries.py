@@ -137,7 +137,7 @@ async def create_gallery(images,
                          embed: Optional[discord.Embed] = None,
                          buttons: Optional[discord.ui.View] = None,
                          upload=True,
-                         invite_mode=False,
+                         invite_mode=True,
                          use_multiple_preview=False):
     if upload:
         gallery_images = await freeimagehost.multiple_upload_and_get_url(
