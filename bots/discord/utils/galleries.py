@@ -13,9 +13,21 @@ SHOW = 'show'
 EXPAND = 'expand'
 
 
+cached_galleries = {
+    # gallery_id: gallery_images
+}
+
+
 async def get_gallery_images(gallery_id):
-    gallery = GalleryImages.filter(gallery_id=gallery_id).order_by('id')
-    return [gallery_image.image_url async for gallery_image in gallery]
+    if gallery_images := cached_galleries.get(gallery_id):
+        return gallery_images
+    else:
+        gallery = GalleryImages.filter(gallery_id=gallery_id).order_by('id')
+        gallery_images = [
+            gallery_image.image_url async for gallery_image in gallery
+        ]
+        cached_galleries[gallery_id] = gallery_images
+        return gallery_images
 
 
 async def get_gallery_message(attachment_id, gallery_id, embed: discord.Embed):
