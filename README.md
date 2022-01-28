@@ -30,7 +30,7 @@ $ pip install -r requirements.txt
 * VK_CHECK_MESSAGES_INTERVAL - частота проверки сообщений вк для синхронного удаления в секундах. Не ставьте слишком маленькое значение, вк апи это не любит. По умолчанию - 1 минута
 * DISCORD_TOKEN - токен для дискорд-бота
 * DISCORD_PREFIX - префикс дискорд-бота, по умолчанию - m.
-* DATABASE - путь до базы данных в формате [строки подключения TortoiseORM](https://tortoise.github.io/databases.html#db-url), по умолчанию - sqlite://servers2.db
+* DATABASE - путь до базы данных в формате [строки подключения TortoiseORM](https://tortoise.github.io/databases.html#db-url), по умолчанию - sqlite://servers2.db. Из-за того, что aerich поддерживает только миграции в виде чистого SQL, гарантируется поддержка только SQLite.
 * FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api)
 
 После задания переменных среды примените миграции к базе данных:

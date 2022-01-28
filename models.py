@@ -15,6 +15,11 @@ class ServerChannelAlias(Model):
     channel_id = fields.IntField()
     alias = fields.CharField(max_length=100)
 
+    class Meta:
+        unique_together = (
+            ('channel_id', 'alias')
+        )
+
 
 class DiscordNickName(Model):
     discord_id = fields.IntField(pk=True)
@@ -40,5 +45,6 @@ class MessageToMessage(Model):
 
     class Meta:
         unique_together = (
-            ('channel_id', 'discord_message_id')
+            ('channel_id', 'discord_message_id'),
+            ('server_id', 'vk_message_id')
         )
