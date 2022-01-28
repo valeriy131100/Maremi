@@ -1,10 +1,11 @@
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import disnake as discord
 import vkbottle.bot
+from vkbottle.tools.dev.mini_types.base.message import Mention
 from vkbottle_types.objects import (AudioAudio, MessagesMessageAttachment,
                                     WallCommentAttachment,
                                     WallWallpostAttachment)
@@ -27,6 +28,8 @@ EMBED_TYPE_NULL = 'embed_type_null'
 EMBED_TYPE_POST = 'embed_type_post'
 EMBED_TYPE_BASIC = 'embed_type_basic'
 EMBED_TYPE_COMMENT = 'embed_type_comment'
+
+MENTION_LINK = '[{text}](https://vk.com/{id_type}{id_value})'
 
 
 @dataclass
@@ -153,22 +156,43 @@ async def process_files(files, embed: discord.Embed):
     return embed
 
 
-async def replace_mentions_as_links(text):
-    def handle_mention(match: re.Match):
-        groups = match.groups()
-        # return '[named links](https://discordapp.com)'
-        return f'[{groups[1]}](https://vk.com/id{groups[0]})'
+def handle_mention(match: re.Match):
+    groups = match.groups()
+    return MENTION_LINK.format(
+        text=groups[2],
+        id_type=groups[0],
+        id_value=groups[1]
+    )
 
+
+async def replace_mentions_as_links(text,
+                                    mention: Optional[Mention] = None):
     new_text = re.sub(
-        r'\[id(\d+)\|([^\]]*)\]',
+        r'\[(id|club|public)(\d+)\|([^\]]*)\]',
         handle_mention,
         text
     )
 
+    if mention:
+        if mention.id < 0:
+            mention_link = MENTION_LINK.format(
+                text=mention.text,
+                id_type='club',
+                id_value=abs(mention.id)
+            )
+        else:
+            mention_link = MENTION_LINK.format(
+                text=mention.text,
+                id_type='id',
+                id_value=mention.id
+            )
+        new_text = f'{mention_link}, {new_text}'
+
     return new_text
 
 
-async def process_all(media: ProcessedAttachments, embed: discord.Embed,
+async def process_all(media: ProcessedAttachments,
+                      embed: Optional[discord.Embed],
                       buttons: discord.ui.View):
     media.images.extend(
         await freeimagehost.multiple_upload_and_get_url(media.gif_images)
@@ -177,7 +201,8 @@ async def process_all(media: ProcessedAttachments, embed: discord.Embed,
     embed = await process_files(media.files, embed)
     embed = await process_audios(media.audios, embed)
 
-    embed.description = await replace_mentions_as_links(embed.description)
+    if embed:
+        embed.description = await replace_mentions_as_links(embed.description)
 
     embeds, buttons = await process_images(media.images, embed, buttons)
 
@@ -188,7 +213,10 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     username, avatar_url = await get_user_info_from_vk_message(vk_message)
     media = await process_attachments(vk_message.attachments)
     embed = None
-    text = vk_message.text
+    text = await replace_mentions_as_links(
+        vk_message.text,
+        vk_message.mention
+    )
     buttons = discord.ui.View()
 
     if media.embed_type == EMBED_TYPE_POST:
