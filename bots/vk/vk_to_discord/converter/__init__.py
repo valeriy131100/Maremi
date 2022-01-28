@@ -2,10 +2,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Union
 
-import disnake
 import disnake as discord
 import vkbottle.bot
 from vkbottle_types.objects import (AudioAudio, MessagesMessageAttachment,
+                                    WallCommentAttachment,
                                     WallWallpostAttachment)
 
 import bots
@@ -15,6 +15,7 @@ from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
 from models import MessageToMessage, Server, VkNickName
 
+from .comment import make_comment_embed
 from .music import process_audios
 from .wallpost import make_post_embed
 
@@ -24,6 +25,7 @@ DOC_IMAGE_TYPE = 4
 EMBED_TYPE_NULL = 'embed_type_null'
 EMBED_TYPE_POST = 'embed_type_post'
 EMBED_TYPE_BASIC = 'embed_type_basic'
+EMBED_TYPE_COMMENT = 'embed_type_comment'
 
 
 @dataclass
@@ -67,7 +69,11 @@ async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
 
 
 async def process_attachments(attachments: List[
-    Union[MessagesMessageAttachment, WallWallpostAttachment]
+    Union[
+        MessagesMessageAttachment,
+        WallWallpostAttachment,
+        WallCommentAttachment
+    ]
 ]):
     media = ProcessedAttachments()
     for attachment in attachments:
@@ -102,30 +108,38 @@ async def process_attachments(attachments: List[
                         await process_attachments(post.attachments)
                     )
                     media.extend(post_media)
+            elif post_comment := attachment.wall_reply:
+                media.embed_type = EMBED_TYPE_COMMENT
+                media.embed_args = (post_comment,)
+                if post_comment.attachments:
+                    comment_media = (
+                        await process_attachments(post_comment.attachments)
+                    )
+                    media.extend(comment_media)
 
     return media
 
 
-async def process_images(images, embed: disnake.Embed):
+async def process_images(images, embed: discord.Embed,
+                         buttons: discord.ui.View):
     images_count = len(images)
     if images_count == 0:
-        buttons = discord.ui.View()
         return [embed] if embed else [], buttons
     elif images_count == 1:
         embed.set_image(images[0])
-        buttons = discord.ui.View()
         return [embed], buttons
     elif images_count > 1:
         embeds, buttons = await create_gallery(
             images,
             embed=embed,
             upload=False,
-            use_multiple_preview=True
+            use_multiple_preview=True,
+            buttons=buttons
         )
         return embeds, buttons
 
 
-async def process_files(files, embed: disnake.Embed):
+async def process_files(files, embed: discord.Embed):
     if files:
         docs = '\n'.join([f'[{doc_name}]({doc_url})'
                           for doc_name, doc_url in files.items()])
@@ -138,18 +152,8 @@ async def process_files(files, embed: disnake.Embed):
     return embed
 
 
-async def get_discord_message(vk_message: vkbottle.bot.Message):
-
-    username, avatar_url = await get_user_info_from_vk_message(vk_message)
-    media = await process_attachments(vk_message.attachments)
-    embed = None
-    text = vk_message.text
-
-    if media.embed_type == EMBED_TYPE_POST:
-        embed = await make_post_embed(*media.embed_args)
-    elif media.embed_type == EMBED_TYPE_BASIC:
-        embed = await make_basic_embed(vk_message)
-
+async def process_all(media: ProcessedAttachments, embed: discord.Embed,
+                      buttons: discord.ui.View):
     media.images.extend(
         await freeimagehost.multiple_upload_and_get_url(media.gif_images)
     )
@@ -157,7 +161,26 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     embed = await process_files(media.files, embed)
     embed = await process_audios(media.audios, embed)
 
-    embeds, buttons = await process_images(media.images, embed)
+    embeds, buttons = await process_images(media.images, embed, buttons)
+
+    return embeds, buttons
+
+
+async def get_discord_message(vk_message: vkbottle.bot.Message):
+    username, avatar_url = await get_user_info_from_vk_message(vk_message)
+    media = await process_attachments(vk_message.attachments)
+    embed = None
+    text = vk_message.text
+    buttons = discord.ui.View()
+
+    if media.embed_type == EMBED_TYPE_POST:
+        embed = await make_post_embed(*media.embed_args)
+    elif media.embed_type == EMBED_TYPE_BASIC:
+        embed = await make_basic_embed(vk_message)
+    elif media.embed_type == EMBED_TYPE_COMMENT:
+        embed, buttons = await make_comment_embed(*media.embed_args)
+
+    embeds, buttons = await process_all(media, embed, buttons)
 
     if reply_message := vk_message.reply_message:
         if reply_message.text:
