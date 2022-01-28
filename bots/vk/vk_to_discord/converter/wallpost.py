@@ -35,14 +35,21 @@ async def make_post_embed(post: WallWallpostFull):
         url=from_info.url
     )
 
-    post_stats = (f'❤️  {post.likes.count}  '
-                  f'💬  {post.comments.count}  '
-                  f'🔁  {post.reposts.count}')
-
-    embed.add_field(
-        name='⁠',
-        value=post_stats,
-        inline=False
+    buttons = discord.ui.View()
+    buttons.add_item(
+        discord.ui.Button(
+            label=f'❤️  {post.likes.count}  '
+        )
+    )
+    buttons.add_item(
+        discord.ui.Button(
+            label=f'💬  {post.comments.count}  '
+        )
+    )
+    buttons.add_item(
+        discord.ui.Button(
+            label=f'🔁  {post.reposts.count}  '
+        )
     )
 
-    return embed
+    return embed, buttons

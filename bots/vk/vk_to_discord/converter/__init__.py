@@ -174,11 +174,11 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     buttons = discord.ui.View()
 
     if media.embed_type == EMBED_TYPE_POST:
-        embed = await make_post_embed(*media.embed_args)
+        embed, buttons = await make_post_embed(*media.embed_args)
     elif media.embed_type == EMBED_TYPE_BASIC:
         embed = await make_basic_embed(vk_message)
     elif media.embed_type == EMBED_TYPE_COMMENT:
-        embed = await make_comment_embed(*media.embed_args)
+        embed, buttons = await make_comment_embed(*media.embed_args)
 
     embeds, buttons = await process_all(media, embed, buttons)
 

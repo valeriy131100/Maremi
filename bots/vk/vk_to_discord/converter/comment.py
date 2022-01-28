@@ -36,13 +36,17 @@ async def make_comment_embed(comment: WallWallComment):
         icon_url=from_info.avatar_url,
         url=from_info.url
     )
-
-    comment_stats = f'❤️  {comment.likes.count}'
-
-    embed.add_field(
-        name='⁠',
-        value=comment_stats,
-        inline=False
+    buttons = discord.ui.View()
+    buttons.add_item(
+        discord.ui.Button(
+            label=f'❤️  {comment.likes.count}  '
+        )
     )
+    if comment.thread:
+        buttons.add_item(
+            discord.ui.Button(
+                label=f'💬  {comment.thread.count}  '
+            )
+        )
 
-    return embed
+    return embed, buttons
