@@ -60,8 +60,7 @@ async def make_post_embed(post: WallWallpostFull):
         discord.ui.Button(
             emoji=COMMENT_EMOJI,
             label=str(post.comments.count),
-            custom_id='nothing comment',
-            disabled=True
+            custom_id='nothing comment'
         )
     )
     buttons.add_item(
