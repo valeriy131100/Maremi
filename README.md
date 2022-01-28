@@ -11,31 +11,31 @@ $ git clone https://github.com/valeriy131100/Maremi
 
 Создайте в этой папке виртуальное окружение:
 ```bash
-$ python3 -m venv [полный путь до папки Maremi]
+$ cd Maremi
+$ python3 -m venv venv
 ```
 
 Активируйте виртуальное окружение и установите зависимости:
 ```bash
-$ cd Maremi
-$ source bin/activate
+$ source venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
 # Настройка перед использованием
 Заполните файл .env.example и переименуйте его в .env или иным образом передайте переменные среды:
-* VK_TOKEN - токен для вк-бота
-* VK_PREFIX - префикс вк-бота, по умолчанию - /
-* VK_ALIAS_PREFIX - префикс вк-бота для алиасов каналов, по умолчанию - #
-* VK_GROUP_ID - id группы вконтакте в которой запущен бот
-* VK_CHECK_MESSAGES_INTERVAL - частота проверки сообщений вк для синхронного удаления в секундах. Не ставьте слишком маленькое значение, вк апи это не любит. По умолчанию - 1 минута
-* DISCORD_TOKEN - токен для дискорд-бота
-* DISCORD_PREFIX - префикс дискорд-бота, по умолчанию - m.
+* VK_TOKEN - токен для вк-бота.
+* VK_PREFIX - префикс вк-бота, по умолчанию - `/`.
+* VK_ALIAS_PREFIX - префикс вк-бота для алиасов каналов, по умолчанию - `#`.
+* VK_GROUP_ID - id группы вконтакте в которой запущен бот.
+* VK_CHECK_MESSAGES_INTERVAL - частота проверки сообщений вк для синхронного удаления в секундах. Не ставьте слишком маленькое значение, вк апи это не любит. По умолчанию - 1 минута.
+* DISCORD_TOKEN - токен для дискорд-бота.
+* DISCORD_PREFIX - префикс дискорд-бота, по умолчанию - `m.`.
 * DATABASE - путь до базы данных в формате [строки подключения TortoiseORM](https://tortoise.github.io/databases.html#db-url), по умолчанию - sqlite://servers2.db. Из-за того, что aerich поддерживает только миграции в виде чистого SQL, гарантируется поддержка только SQLite.
-* FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api)
+* FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api)/
 
 После задания переменных среды примените миграции к базе данных:
 ```bash
-$ source bin/activate
+$ source venv/bin/activate
 $ aerich upgrade
 ```
 
@@ -45,7 +45,7 @@ $ aerich upgrade
 
 Находясь в директории Maremi исполните:
 ```bash
-$ bin/python main.py
+$ venv/bin/python main.py
 ```
 Бот запустится.
 
