@@ -17,6 +17,11 @@ REPOST_EMOJI = '🔁'
 PostLike = Union[WallWallpostFull, WallWallComment]
 
 
+def str_with_follow_space(num: int):
+    """Fix mobile discord button color"""
+    return f' {num}'
+
+
 async def make_basic_post_like_embed(post_like: PostLike):
     text = post_like.text
     if text and len(text) > 4096:
@@ -52,21 +57,21 @@ async def make_post_embed(post: WallWallpostFull):
     buttons.add_item(
         discord.ui.Button(
             emoji=LIKE_EMOJI,
-            label=str(post.likes.count),
+            label=str_with_follow_space(post.likes.count),
             custom_id='nothing like'
         )
     )
     buttons.add_item(
         discord.ui.Button(
             emoji=COMMENT_EMOJI,
-            label=str(post.comments.count),
+            label=str_with_follow_space(post.comments.count),
             custom_id='nothing comment'
         )
     )
     buttons.add_item(
         discord.ui.Button(
             emoji=REPOST_EMOJI,
-            label=str(post.reposts.count),
+            label=str_with_follow_space(post.reposts.count),
             custom_id='nothing repost'
         )
     )
@@ -88,7 +93,7 @@ async def make_comment_embed(comment: WallWallComment):
     buttons.add_item(
         discord.ui.Button(
             emoji=LIKE_EMOJI,
-            label=str(comment.likes.count),
+            label=str_with_follow_space(comment.likes.count),
             custom_id='nothing like'
         )
     )
@@ -96,7 +101,7 @@ async def make_comment_embed(comment: WallWallComment):
         buttons.add_item(
             discord.ui.Button(
                 emoji=COMMENT_EMOJI,
-                label=str(comment.thread.count),
+                label=str_with_follow_space(comment.thread.count),
                 custom_id='nothing comment'
             )
         )
