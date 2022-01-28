@@ -17,9 +17,8 @@ from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
 from models import MessageToMessage, Server, VkNickName
 
-from .comment import make_comment_embed
 from .music import process_audios
-from .wallpost import make_post_embed
+from .post_like import make_post_embed, make_comment_embed
 
 DOC_GIF_TYPE = 3
 DOC_IMAGE_TYPE = 4
