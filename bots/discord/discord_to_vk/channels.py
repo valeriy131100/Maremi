@@ -12,9 +12,8 @@ class DiscordToVkChannels(commands.Cog):
     @commands.group(pass_context=True, invoke_without_command=True)
     async def alias(self, context: commands.Context, alias_word):
         try:
-            server = await Server.get(server_id=context.guild.id)
             await ServerChannelAlias.create(
-                server=server,
+                server_id=context.guild.id,
                 channel_id=context.channel.id,
                 alias=alias_word
             )
@@ -30,9 +29,8 @@ class DiscordToVkChannels(commands.Cog):
     @alias.command(name='remove')
     async def remove_alias(self, context: commands.Context, alias_word):
         try:
-            server = await Server.get(server_id=context.guild.id)
             alias = await ServerChannelAlias.get(
-                server=server,
+                server_id=context.guild.id,
                 alias=alias_word
             )
             await alias.delete()
