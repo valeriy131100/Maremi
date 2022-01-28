@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Union
@@ -152,6 +153,21 @@ async def process_files(files, embed: discord.Embed):
     return embed
 
 
+async def replace_mentions_as_links(text):
+    def handle_mention(match: re.Match):
+        groups = match.groups()
+        # return '[named links](https://discordapp.com)'
+        return f'[{groups[1]}](https://vk.com/id{groups[0]})'
+
+    new_text = re.sub(
+        r'\[id(\d+)\|([^\]]*)\]',
+        handle_mention,
+        text
+    )
+
+    return new_text
+
+
 async def process_all(media: ProcessedAttachments, embed: discord.Embed,
                       buttons: discord.ui.View):
     media.images.extend(
@@ -160,6 +176,8 @@ async def process_all(media: ProcessedAttachments, embed: discord.Embed,
 
     embed = await process_files(media.files, embed)
     embed = await process_audios(media.audios, embed)
+
+    embed.description = await replace_mentions_as_links(embed.description)
 
     embeds, buttons = await process_images(media.images, embed, buttons)
 
