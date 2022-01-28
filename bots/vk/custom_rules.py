@@ -80,11 +80,12 @@ class AliasRule(ABCRule):
             server = await Server.get(chat_id=event.chat_id)
         except DoesNotExist:
             return False
+
         commands = ServerChannelAlias.filter(server=server)
         if not commands:
             return False
-        else:
-            commands = [command.alias async for command in commands]
+
+        commands = await commands.values_list('alias', flat=True)
 
         for command in commands:
             if event.text.startswith(f'{prefix}{command} '):
