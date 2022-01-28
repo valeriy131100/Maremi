@@ -9,6 +9,11 @@ from .get_from import get_from_info
 POST_URL_TEMPLATE = 'https://vk.com/wall{from_id}_{post_id}'
 COMMENT_URL_TEMPLATE = ('https://vk.com/wall{group_id}_{post_id}'
                         '?reply={comment_id}')
+LIKE_EMOJI = '❤️'
+COMMENT_EMOJI = '💬'
+REPOST_EMOJI = '🔁'
+
+
 PostLike = Union[WallWallpostFull, WallWallComment]
 
 
@@ -46,19 +51,23 @@ async def make_post_embed(post: WallWallpostFull):
     buttons = discord.ui.View()
     buttons.add_item(
         discord.ui.Button(
-            label=f'❤️  {post.likes.count}  ',
+            emoji=LIKE_EMOJI,
+            label=str(post.likes.count),
             custom_id='nothing like'
         )
     )
     buttons.add_item(
         discord.ui.Button(
-            label=f'💬  {post.comments.count}  ',
-            custom_id='nothing comment'
+            emoji=COMMENT_EMOJI,
+            label=str(post.comments.count),
+            custom_id='nothing comment',
+            disabled=True
         )
     )
     buttons.add_item(
         discord.ui.Button(
-            label=f'🔁  {post.reposts.count}  ',
+            emoji=REPOST_EMOJI,
+            label=str(post.reposts.count),
             custom_id='nothing repost'
         )
     )
@@ -79,14 +88,16 @@ async def make_comment_embed(comment: WallWallComment):
     buttons = discord.ui.View()
     buttons.add_item(
         discord.ui.Button(
-            label=f'❤️  {comment.likes.count}  ',
+            emoji=LIKE_EMOJI,
+            label=str(comment.likes.count),
             custom_id='nothing like'
         )
     )
     if comment.thread:
         buttons.add_item(
             discord.ui.Button(
-                label=f'💬  {comment.thread.count}  ',
+                emoji=COMMENT_EMOJI,
+                label=str(comment.thread.count),
                 custom_id='nothing comment'
             )
         )
