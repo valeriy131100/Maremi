@@ -46,17 +46,20 @@ async def make_post_embed(post: WallWallpostFull):
     buttons = discord.ui.View()
     buttons.add_item(
         discord.ui.Button(
-            label=f'❤️  {post.likes.count}  '
+            label=f'❤️  {post.likes.count}  ',
+            custom_id='nothing like'
         )
     )
     buttons.add_item(
         discord.ui.Button(
-            label=f'💬  {post.comments.count}  '
+            label=f'💬  {post.comments.count}  ',
+            custom_id='nothing comment'
         )
     )
     buttons.add_item(
         discord.ui.Button(
-            label=f'🔁  {post.reposts.count}  '
+            label=f'🔁  {post.reposts.count}  ',
+            custom_id='nothing repost'
         )
     )
 
@@ -76,13 +79,15 @@ async def make_comment_embed(comment: WallWallComment):
     buttons = discord.ui.View()
     buttons.add_item(
         discord.ui.Button(
-            label=f'❤️  {comment.likes.count}  '
+            label=f'❤️  {comment.likes.count}  ',
+            custom_id='nothing like'
         )
     )
     if comment.thread:
         buttons.add_item(
             discord.ui.Button(
-                label=f'💬  {comment.thread.count}  '
+                label=f'💬  {comment.thread.count}  ',
+                custom_id='nothing comment'
             )
         )
 
