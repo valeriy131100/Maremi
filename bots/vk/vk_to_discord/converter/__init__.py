@@ -166,6 +166,9 @@ def handle_mention(match: re.Match):
 
 async def replace_mentions_as_links(text,
                                     mention: Optional[Mention] = None):
+    if not text or mention:
+        return None
+
     new_text = re.sub(
         r'\[(id|club|public)(\d+)\|([^\]]*)\]',
         handle_mention,
