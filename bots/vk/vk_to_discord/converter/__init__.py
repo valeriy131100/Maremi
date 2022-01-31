@@ -17,8 +17,9 @@ from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
 from models import MessageToMessage, Server, VkNickName
 
+from .get_from import get_from_info
 from .music import process_audios
-from .post_like import make_post_embed, make_comment_embed
+from .post_like import make_comment_embed, make_post_embed
 
 DOC_GIF_TYPE = 3
 DOC_IMAGE_TYPE = 4
@@ -55,20 +56,6 @@ async def make_basic_embed(vk_message: vkbottle.bot.Message, text=None):
         embed = discord.Embed(timestamp=timestamp)
 
     return embed
-
-
-async def get_user_info_from_vk_message(vk_message: vkbottle.bot.Message):
-    user = await vk_message.get_user(fields=['photo_50'])
-    user_nickname = (await VkNickName.get_or_none(vk_id=user.id))
-    if user_nickname:
-        username = (f'{user_nickname.nickname} '
-                    f'({user.first_name} {user.last_name})')
-    else:
-        username = f'{user.first_name} {user.last_name}'
-
-    avatar_url = f'{user.photo_50}'
-
-    return username, avatar_url
 
 
 async def process_attachments(attachments: List[
@@ -212,7 +199,9 @@ async def process_all(media: ProcessedAttachments,
 
 
 async def get_discord_message(vk_message: vkbottle.bot.Message):
-    username, avatar_url = await get_user_info_from_vk_message(vk_message)
+    from_info = await get_from_info(vk_message.from_id)
+    await from_info.load_nickname()
+
     media = await process_attachments(vk_message.attachments)
     embed = None
     text = await replace_mentions_as_links(
@@ -239,9 +228,9 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
     return {
         'content': text,
         'embeds': embeds,
-        'avatar_url': avatar_url,
-        'username': username,
-        'view': buttons,
+        'avatar_url': from_info.avatar_url,
+        'username': from_info.nickname,
+        'view': buttons
     }
 
 
