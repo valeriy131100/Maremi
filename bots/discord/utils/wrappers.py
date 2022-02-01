@@ -9,6 +9,7 @@ WTF_EMOJI = '❗'
 
 
 def optional_arg_decorator(decorator):
+    @wraps(decorator)
     def wrapped_decorator(*args, **kwargs):
         if len(args) == 1:
             return decorator(args[0])
