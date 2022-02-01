@@ -21,12 +21,13 @@ class FromInfo:
         if self.from_id < 0:
             self.nickname = self.name
         else:
-            user_nickname = (
-                (await VkNickName.get_or_none(vk_id=self.from_id)).nickname
-            )
-            nickname = (self.name if not user_nickname
-                        else f'{user_nickname} ({self.name})')
-            self.nickname = nickname
+            user_nickname = await VkNickName.get_or_none(vk_id=self.from_id)
+            if user_nickname:
+                user_nickname = user_nickname.nickname
+            else:
+                user_nickname = None
+            self.nickname = (self.name if not user_nickname
+                             else f'{user_nickname.nickname} ({self.name})')
 
 
 async def get_from_info(from_id):
