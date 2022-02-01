@@ -153,7 +153,7 @@ def handle_mention(match: re.Match):
 
 async def replace_mentions_as_links(text,
                                     mention: Optional[Mention] = None):
-    new_text = None
+    new_text = ''
 
     if text:
         new_text = re.sub(
