@@ -31,7 +31,7 @@ $ pip install -r requirements.txt
 * DISCORD_TOKEN - токен для дискорд-бота.
 * DISCORD_PREFIX - префикс дискорд-бота, по умолчанию - `m.`.
 * DATABASE - путь до базы данных в формате [строки подключения TortoiseORM](https://tortoise.github.io/databases.html#db-url), по умолчанию - sqlite://servers2.db. Из-за того, что aerich поддерживает только миграции в виде чистого SQL, гарантируется поддержка только SQLite.
-* FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api)/
+* FREEIMAGEHOST_KEY - токен [FreeImageHost](https://freeimage.host/page/api).
 
 После задания переменных среды примените миграции к базе данных:
 ```bash
