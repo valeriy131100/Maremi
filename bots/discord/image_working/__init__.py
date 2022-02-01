@@ -4,6 +4,12 @@ from disnake.ext import commands
 import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
+from bots.discord.utils.wrappers import react_and_delete
+
+
+class SplitError(Exception):
+    def __init__(self, message: discord.Message):
+        self.message = message
 
 
 class ImageWorking(commands.Cog):
@@ -11,6 +17,7 @@ class ImageWorking(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @react_and_delete(exception=SplitError)
     async def split(self, context: commands.Context):
         if ref := context.message.reference:
             ref_message = await context.channel.fetch_message(ref.message_id)
@@ -42,11 +49,10 @@ class ImageWorking(commands.Cog):
                             avatar_url=author_avatar
                         )
                 await ref_message.delete()
-                await context.message.delete()
             else:
-                await context.send('Оригинальное сообщение не содержит изображений')
+                raise SplitError(message=context.message)
         else:
-            await context.send('Пожалуйста, ответьте на сообщение, которое хотите разделить')
+            raise SplitError(message=context.message)
 
     @commands.command(name='gallery')
     async def make_gallery(self, context: commands.Context, mode=None):

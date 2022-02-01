@@ -1,6 +1,8 @@
 from disnake.ext import commands
 
 import bots
+from bots.discord.utils.wrappers import react_and_delete
+from bots.exceptions import ChatNotAllowed
 from models import Server
 
 
@@ -9,19 +11,13 @@ class DiscordToVkConnect(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def connect(self, context: commands.Context, chat_id):
-        try:
-            chat_id = int(chat_id)
-        except ValueError:
-            await context.send(f'Это не id чата Вконтакте')
+    @react_and_delete(exceptions=ChatNotAllowed)
+    async def connect(self, context: commands.Context, chat_id: int):
+        if bots.temp['chats'].get(chat_id, False):
+            await Server.create(
+                server_id=context.guild.id,
+                chat_id=chat_id,
+                default_channel=context.channel.id
+            )
         else:
-            if bots.temp['chats'].get(chat_id, False):
-                await Server.create(
-                    server_id=context.guild.id,
-                    chat_id=chat_id,
-                    default_channel=context.channel.id
-                )
-                await context.send(f'Сервер {context.guild.id} успешно привязан к чату {chat_id}')
-                await context.send(f'Канал по умолчанию установлен на текущий ({context.channel.id})')
-            else:
-                await context.channel.send(f'Чат {chat_id} не разрешил себя привязывать')
+            raise ChatNotAllowed(chat_id)
