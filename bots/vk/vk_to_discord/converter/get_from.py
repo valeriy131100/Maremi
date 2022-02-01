@@ -27,7 +27,7 @@ class FromInfo:
             else:
                 user_nickname = None
             self.nickname = (self.name if not user_nickname
-                             else f'{user_nickname.nickname} ({self.name})')
+                             else f'{user_nickname} ({self.name})')
 
 
 async def get_from_info(from_id):
