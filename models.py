@@ -21,12 +21,12 @@ class ServerChannelAlias(Model):
         )
 
 
-class DiscordNickName(Model):
+class DiscordUser(Model):
     discord_id = fields.IntField(pk=True)
     nickname = fields.CharField(max_length=100)
 
 
-class VkNickName(Model):
+class VkUser(Model):
     vk_id = fields.IntField(pk=True)
     nickname = fields.CharField(max_length=100)
 

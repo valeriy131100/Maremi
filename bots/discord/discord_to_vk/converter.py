@@ -8,18 +8,18 @@ import bots
 from bots.discord.utils.file_workers import (EMOJI_REGEX, download_emoji,
                                              download_file)
 from bots.vk.utils import get_random_id
-from models import DiscordNickName, MessageToMessage, Server
+from models import DiscordUser, MessageToMessage, Server
 
 
 async def get_vk_message(discord_message: discord.Message):
     message_text = discord_message.content
 
-    nickname = (await DiscordNickName.get_or_none(
+    user = await DiscordUser.get_or_none(
         discord_id=discord_message.author.id
-    ))
+    )
 
-    if nickname:
-        author_string = f'{nickname.nickname} ({discord_message.author}):'
+    if user:
+        author_string = f'{user.nickname} ({discord_message.author}):'
     else:
         author_string = f'{discord_message.author}:'
     message_text = f'{author_string}\n{message_text}'

@@ -15,7 +15,7 @@ import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
-from models import MessageToMessage, Server, VkNickName
+from models import MessageToMessage, Server, VkUser
 
 from .get_from import get_from_info
 from .music import process_audios

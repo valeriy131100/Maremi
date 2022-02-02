@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import bots
-from models import VkNickName
+from models import VkUser
 
 FROM_USER_TEMPLATE = 'https://vk.com/id{from_id}'
 FROM_GROUP_TEMPLATE = 'https://vk.com/club{from_id}'
@@ -21,9 +21,9 @@ class FromInfo:
         if self.from_id < 0:
             self.nickname = self.name
         else:
-            user_nickname = await VkNickName.get_or_none(vk_id=self.from_id)
-            if user_nickname:
-                user_nickname = user_nickname.nickname
+            user = await VkUser.get_or_none(vk_id=self.from_id)
+            if user:
+                user_nickname = user.nickname
             else:
                 user_nickname = None
             self.nickname = (self.name if not user_nickname
