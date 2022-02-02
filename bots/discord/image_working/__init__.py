@@ -12,6 +12,14 @@ class SplitError(Exception):
         self.message = message
 
 
+class GalleryError(Exception):
+    def __init__(self, message: discord.Message):
+        self.message = message
+
+
+LOADING_EMOJI = '⌛'
+
+
 class ImageWorking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -33,8 +41,11 @@ class ImageWorking(commands.Cog):
         author_avatar = ref_message.author.avatar.url
         timestamp = ref_message.created_at
         webhook = await get_channel_send_webhook(context.channel)
+
+        await message.add_reaction(LOADING_EMOJI)
+
         images_urls = await freeimagehost.multiple_upload_and_get_url(
-            [attachment.url] for attachment in attachments
+            [attachment.url for attachment in attachments]
         )
 
         first_embed = True
@@ -61,41 +72,45 @@ class ImageWorking(commands.Cog):
         await ref_message.delete()
 
     @commands.command(name='gallery')
+    @react_and_delete(exception=GalleryError, delete_delay=0)
     async def make_gallery(self, context: commands.Context, mode=None):
-        original_message = None
+        command_message = context.message
+        message_to_remove = None
+
         if ref := context.message.reference:
-            message = await context.channel.fetch_message(ref.message_id)
-            original_message = context.message
+            source_message = await context.channel.fetch_message(ref.message_id)
+            message_to_remove = source_message
         else:
-            message = context.message
+            source_message = context.message
 
-        author_name = message.author.display_name
-        author_avatar = message.author.avatar.url
+        author_name = source_message.author.display_name
+        author_avatar = source_message.author.avatar.url
         webhook = await get_channel_send_webhook(context.channel)
+        attachments = source_message.attachments
 
-        images_count = len(message.attachments)
-        if images_count < 2:
-            await context.send(
-                'Недостаточно вложений для создания галереи'
-            )
-            return
-        gallery_message = await webhook.send(
-            f'Загружаю {images_count} изображений',
-            wait=True,
-            username=author_name,
-            avatar_url=author_avatar
+        if len(attachments) < 2:
+            raise GalleryError(message=command_message)
+
+        await command_message.add_reaction(LOADING_EMOJI)
+
+        gallery_images = await freeimagehost.multiple_upload_and_get_url(
+            [attachment.url for attachment in source_message.attachments]
         )
-        gallery_images = [attachment.url for attachment in message.attachments]
-        if mode in ('n', 'noninvite'):
-            embeds, buttons = await create_gallery(
-                gallery_images,
-                invite_mode=False,
-                use_multiple_preview=True
-            )
-        else:
-            embed, buttons = await create_gallery(gallery_images)
-            embeds = [embed]
-        await message.delete()
-        if original_message:
-            await original_message.delete()
-        await gallery_message.edit(content='', embeds=embeds, view=buttons)
+
+        invite_mode = mode not in ('n', 'noninvite')
+
+        embeds, buttons = await create_gallery(
+            gallery_images,
+            invite_mode=invite_mode,
+            use_multiple_preview=True
+        )
+
+        if message_to_remove:
+            await message_to_remove.delete()
+
+        await webhook.send(
+            embeds=embeds,
+            username=author_name,
+            avatar_url=author_avatar,
+            view=buttons
+        )
