@@ -28,12 +28,12 @@ def react_and_delete(func: Callable, *,
                      exception: Optional[Exception] = None,
                      exceptions: Optional[tuple] = tuple()):
     @wraps(func)
-    async def wrapper(cls, context: commands.Context, *args, **kwargs):
+    async def wrapper(obj, context: commands.Context, *args, **kwargs):
         message = context.message
         excepted = exception if exception else exceptions
 
         try:
-            await func(cls, context, *args, **kwargs)
+            await func(obj, context, *args, **kwargs)
         except excepted:
             await message.add_reaction(FAILURE_EMOJI)
         except Exception as unhandled_exception:
