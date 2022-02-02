@@ -25,7 +25,7 @@ class ImageWorking(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @react_and_delete(exception=SplitError)
+    @react_and_delete(exception=SplitError, success_delete_delay=0)
     async def split(self, context: commands.Context):
         message = context.message
 
@@ -72,7 +72,7 @@ class ImageWorking(commands.Cog):
         await ref_message.delete()
 
     @commands.command(name='gallery')
-    @react_and_delete(exception=GalleryError, delete_delay=0)
+    @react_and_delete(exception=GalleryError, success_delete_delay=0)
     async def make_gallery(self, context: commands.Context, mode=None):
         command_message = context.message
         message_to_remove = None
