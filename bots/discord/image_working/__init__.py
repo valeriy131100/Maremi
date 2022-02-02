@@ -19,40 +19,46 @@ class ImageWorking(commands.Cog):
     @commands.command()
     @react_and_delete(exception=SplitError)
     async def split(self, context: commands.Context):
-        if ref := context.message.reference:
-            ref_message = await context.channel.fetch_message(ref.message_id)
-            if attaches := ref_message.attachments:
-                author_name = ref_message.author.display_name
-                author_avatar = ref_message.author.avatar.url
-                webhook = await get_channel_send_webhook(context.channel)
-                first_embed = True
-                for attach in attaches:
-                    image_url = await freeimagehost.upload_and_get_url(
-                        attach.url
-                    )
-                    timestamp = ref_message.created_at
-                    embed = discord.Embed(timestamp=timestamp)
-                    embed.set_image(url=image_url)
-                    embed.set_author(name=author_name, icon_url=author_avatar)
-                    if first_embed:
-                        await webhook.send(
-                            ref_message.content,
-                            embed=embed,
-                            username=author_name,
-                            avatar_url=author_avatar
-                        )
-                        first_embed = False
-                    else:
-                        await webhook.send(
-                            embed=embed,
-                            username=author_name,
-                            avatar_url=author_avatar
-                        )
-                await ref_message.delete()
+        message = context.message
+
+        if not (ref := context.message.reference):
+            raise SplitError(message=message)
+
+        ref_message = await context.channel.fetch_message(ref.message_id)
+
+        if not (attachments := ref_message.attachments):
+            raise SplitError(message=message)
+
+        author_name = ref_message.author.display_name
+        author_avatar = ref_message.author.avatar.url
+        timestamp = ref_message.created_at
+        webhook = await get_channel_send_webhook(context.channel)
+        images_urls = await freeimagehost.multiple_upload_and_get_url(
+            [attachment.url] for attachment in attachments
+        )
+
+        first_embed = True
+        embeds = []
+        embed = discord.Embed(timestamp=timestamp)
+        embed.set_author(name=author_name, icon_url=author_avatar)
+        for image_url in images_urls:
+            image_embed = embed.copy()
+            image_embed.set_image(image_url)
+
+            if first_embed:
+                image_embed.description = ref_message.content
+                embeds.append(image_embed)
+                first_embed = False
             else:
-                raise SplitError(message=context.message)
-        else:
-            raise SplitError(message=context.message)
+                embeds.append(image_embed)
+
+        await webhook.send(
+            embeds=embeds,
+            username=author_name,
+            avatar_url=author_avatar
+        )
+
+        await ref_message.delete()
 
     @commands.command(name='gallery')
     async def make_gallery(self, context: commands.Context, mode=None):
