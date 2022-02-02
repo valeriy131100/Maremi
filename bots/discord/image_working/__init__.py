@@ -1,7 +1,6 @@
 import disnake as discord
 from disnake.ext import commands
 
-import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.discord.utils.wrappers import react_and_delete
