@@ -44,9 +44,7 @@ class ImageWorking(commands.Cog):
 
         await message.add_reaction(LOADING_EMOJI)
 
-        images_urls = await freeimagehost.multiple_upload_and_get_url(
-            [attachment.url for attachment in attachments]
-        )
+        images_urls = [attachment.url for attachment in attachments]
 
         first_embed = True
         embeds = []
@@ -93,9 +91,7 @@ class ImageWorking(commands.Cog):
 
         await command_message.add_reaction(LOADING_EMOJI)
 
-        gallery_images = await freeimagehost.multiple_upload_and_get_url(
-            [attachment.url for attachment in source_message.attachments]
-        )
+        gallery_images = [attachment.url for attachment in attachments]
 
         invite_mode = mode not in ('n', 'noninvite')
 
