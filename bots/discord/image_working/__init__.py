@@ -12,84 +12,103 @@ class SplitError(Exception):
         self.message = message
 
 
+class GalleryError(Exception):
+    def __init__(self, message: discord.Message):
+        self.message = message
+
+
+LOADING_EMOJI = '⌛'
+
+
 class ImageWorking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
-    @react_and_delete(exception=SplitError)
+    @react_and_delete(exception=SplitError, success_delete_delay=0)
     async def split(self, context: commands.Context):
-        if ref := context.message.reference:
-            ref_message = await context.channel.fetch_message(ref.message_id)
-            if attaches := ref_message.attachments:
-                author_name = ref_message.author.display_name
-                author_avatar = ref_message.author.avatar.url
-                webhook = await get_channel_send_webhook(context.channel)
-                first_embed = True
-                for attach in attaches:
-                    image_url = await freeimagehost.upload_and_get_url(
-                        attach.url
-                    )
-                    timestamp = ref_message.created_at
-                    embed = discord.Embed(timestamp=timestamp)
-                    embed.set_image(url=image_url)
-                    embed.set_author(name=author_name, icon_url=author_avatar)
-                    if first_embed:
-                        await webhook.send(
-                            ref_message.content,
-                            embed=embed,
-                            username=author_name,
-                            avatar_url=author_avatar
-                        )
-                        first_embed = False
-                    else:
-                        await webhook.send(
-                            embed=embed,
-                            username=author_name,
-                            avatar_url=author_avatar
-                        )
-                await ref_message.delete()
-            else:
-                raise SplitError(message=context.message)
-        else:
-            raise SplitError(message=context.message)
+        message = context.message
 
-    @commands.command(name='gallery')
-    async def make_gallery(self, context: commands.Context, mode=None):
-        original_message = None
-        if ref := context.message.reference:
-            message = await context.channel.fetch_message(ref.message_id)
-            original_message = context.message
-        else:
-            message = context.message
+        if not (ref := context.message.reference):
+            raise SplitError(message=message)
 
-        author_name = message.author.display_name
-        author_avatar = message.author.avatar.url
+        ref_message = await context.channel.fetch_message(ref.message_id)
+
+        if not (attachments := ref_message.attachments):
+            raise SplitError(message=message)
+
+        author_name = ref_message.author.display_name
+        author_avatar = ref_message.author.avatar.url
+        timestamp = ref_message.created_at
         webhook = await get_channel_send_webhook(context.channel)
 
-        images_count = len(message.attachments)
-        if images_count < 2:
-            await context.send(
-                'Недостаточно вложений для создания галереи'
-            )
-            return
-        gallery_message = await webhook.send(
-            f'Загружаю {images_count} изображений',
-            wait=True,
+        await message.add_reaction(LOADING_EMOJI)
+
+        images_urls = freeimagehost.multiple_upload_and_get_url(
+            [attachment.url for attachment in attachments]
+        )
+
+        first_embed = True
+        embeds = []
+        embed = discord.Embed(timestamp=timestamp)
+        embed.set_author(name=author_name, icon_url=author_avatar)
+        for image_url in images_urls:
+            image_embed = embed.copy()
+            image_embed.set_image(image_url)
+
+            if first_embed:
+                image_embed.description = ref_message.content
+                embeds.append(image_embed)
+                first_embed = False
+            else:
+                embeds.append(image_embed)
+
+        await webhook.send(
+            embeds=embeds,
             username=author_name,
             avatar_url=author_avatar
         )
-        gallery_images = [attachment.url for attachment in message.attachments]
-        if mode in ('n', 'noninvite'):
-            embeds, buttons = await create_gallery(
-                gallery_images,
-                invite_mode=False,
-                use_multiple_preview=True
-            )
+
+        await ref_message.delete()
+
+    @commands.command(name='gallery')
+    @react_and_delete(exception=GalleryError, success_delete_delay=0)
+    async def make_gallery(self, context: commands.Context, mode=None):
+        command_message = context.message
+        message_to_remove = None
+
+        if ref := context.message.reference:
+            source_message = await context.channel.fetch_message(ref.message_id)
+            message_to_remove = source_message
         else:
-            embed, buttons = await create_gallery(gallery_images)
-            embeds = [embed]
-        await message.delete()
-        if original_message:
-            await original_message.delete()
-        await gallery_message.edit(content='', embeds=embeds, view=buttons)
+            source_message = context.message
+
+        author_name = source_message.author.display_name
+        author_avatar = source_message.author.avatar.url
+        webhook = await get_channel_send_webhook(context.channel)
+        attachments = source_message.attachments
+
+        if len(attachments) < 2:
+            raise GalleryError(message=command_message)
+
+        await command_message.add_reaction(LOADING_EMOJI)
+
+        gallery_images = [attachment.url for attachment in attachments]
+
+        invite_mode = mode not in ('n', 'noninvite')
+
+        embeds, buttons = await create_gallery(
+            gallery_images,
+            invite_mode=invite_mode,
+            use_multiple_preview=True
+        )
+
+        if message_to_remove:
+            await message_to_remove.delete()
+
+        await webhook.send(
+            embeds=embeds,
+            username=author_name,
+            avatar_url=author_avatar,
+            view=buttons
+        )

@@ -1,3 +1,4 @@
+import inspect
 from functools import wraps
 from typing import Callable, Optional
 
@@ -26,11 +27,14 @@ def optional_arg_decorator(decorator):
 @optional_arg_decorator
 def react_and_delete(func: Callable, *,
                      exception: Optional[Exception] = None,
-                     exceptions: Optional[tuple] = tuple()):
+                     exceptions: Optional[tuple] = tuple(),
+                     delete_delay: int = 5,
+                     success_delete_delay: Optional[int] = None):
     @wraps(func)
     async def wrapper(obj, context: commands.Context, *args, **kwargs):
         message = context.message
         excepted = exception if exception else exceptions
+        _delete_delay = delete_delay
 
         try:
             await func(obj, context, *args, **kwargs)
@@ -41,7 +45,9 @@ def react_and_delete(func: Callable, *,
             raise unhandled_exception
         else:
             await message.add_reaction(SUCCESS_EMOJI)
+            if success_delete_delay is not None:
+                _delete_delay = success_delete_delay
         finally:
-            await message.delete(delay=5)
+            await message.delete(delay=_delete_delay)
 
     return wrapper
