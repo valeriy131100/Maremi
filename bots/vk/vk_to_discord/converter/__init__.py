@@ -15,7 +15,7 @@ import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.vk.utils import get_photo_max_size
-from models import MessageToMessage, Server, VkUser
+from models import MessageToMessage, Server
 
 from .get_from import get_from_info
 from .music import process_audios
@@ -30,6 +30,9 @@ EMBED_TYPE_BASIC = 'embed_type_basic'
 EMBED_TYPE_COMMENT = 'embed_type_comment'
 
 MENTION_LINK = '[{text}](https://vk.com/{id_type}{id_value})'
+DISCORD_MESSAGE_LINK = (
+    'https://discord.com/channels/{server_id}/{channel_id}/{message_id}'
+)
 
 
 @dataclass
@@ -221,9 +224,26 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
 
     if reply_message := vk_message.reply_message:
         if reply_message.text:
+            server = await Server.get(chat_id=vk_message.chat_id)
+            discord_message = await MessageToMessage.get_or_none(
+                server=server,
+                vk_message_id=reply_message.conversation_message_id
+            )
             lines = reply_message.text.split('\n')
             formatted_lines = ''.join(f'> {line}\n' for line in lines)
-            text = f'{formatted_lines}{text}'
+
+            if not discord_message:
+                text = f'{formatted_lines}{text}'
+            else:
+                message_link = DISCORD_MESSAGE_LINK.format(
+                    server_id=server.server_id,
+                    channel_id=discord_message.channel_id,
+                    message_id=discord_message.discord_message_id
+                )
+
+                text = (
+                    f'> [Сообщение]({message_link})\n{formatted_lines}{text}'
+                )
 
     return {
         'content': text,
