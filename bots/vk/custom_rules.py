@@ -1,4 +1,3 @@
-import types
 from collections.abc import Iterable
 from typing import Union
 
@@ -11,8 +10,8 @@ from models import Server, ServerChannelAlias
 
 
 class StartsWithRule(ABCRule):
-    def __init__(self, command_getter, prefix=None, return_text=True):
-        self.command_getter = command_getter
+    def __init__(self, commands_getter, prefix=None, return_text=True):
+        self.commands_getter = commands_getter
         self.prefix = prefix if prefix else config.vk_prefix
         self.return_text = return_text
 
@@ -25,7 +24,7 @@ class StartsWithRule(ABCRule):
             return True
 
     async def check(self, event: Message) -> Union[dict, bool]:
-        command_getter = self.command_getter
+        command_getter = self.commands_getter
         prefix = self.prefix
         if isinstance(command_getter, str):
             commands = [command_getter]
