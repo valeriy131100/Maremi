@@ -1,6 +1,7 @@
 from typing import Optional
 
 import disnake as discord
+from cache import AsyncLRU
 from disnake.ext import commands
 from tortoise.functions import Max
 
@@ -15,22 +16,14 @@ SHOW = 'show'
 EXPAND = 'expand'
 
 
-cached_galleries = {
-    # gallery_id: gallery_images
-}
-
-
+@AsyncLRU()
 async def get_gallery_images(gallery_id):
-    if gallery_images := cached_galleries.get(gallery_id):
-        return gallery_images
-    else:
-        gallery_images = await (
-            GalleryImages.filter(gallery_id=gallery_id)
-                         .order_by('id')
-                         .values_list('image_url', flat=True)
-        )
-        cached_galleries[gallery_id] = gallery_images
-        return gallery_images
+    gallery_images = await (
+        GalleryImages.filter(gallery_id=gallery_id)
+                     .order_by('id')
+                     .values_list('image_url', flat=True)
+    )
+    return gallery_images
 
 
 async def clear_buttons_from_gallery(buttons: discord.ui.View):
