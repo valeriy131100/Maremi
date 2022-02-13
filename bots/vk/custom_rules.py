@@ -10,18 +10,6 @@ import config
 from models import Server, ServerChannelAlias
 
 
-def is_callable(obj):
-    return isinstance(
-        obj,
-        (
-            types.FunctionType,
-            types.BuiltinFunctionType,
-            types.MethodType,
-            types.BuiltinMethodType
-        )
-    )
-
-
 class StartsWithRule(ABCRule):
     def __init__(self, command_getter, prefix=None, return_text=True):
         self.command_getter = command_getter
@@ -43,7 +31,7 @@ class StartsWithRule(ABCRule):
             commands = [command_getter]
         elif isinstance(command_getter, Iterable):
             commands = command_getter
-        elif is_callable(command_getter):
+        elif callable(command_getter):
             commands = command_getter()
         else:
             return False
