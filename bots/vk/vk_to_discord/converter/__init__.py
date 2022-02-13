@@ -30,6 +30,8 @@ EMBED_TYPE_BASIC = 'embed_type_basic'
 EMBED_TYPE_COMMENT = 'embed_type_comment'
 
 MENTION_LINK = '[{text}](https://vk.com/{id_type}{id_value})'
+MENTION_REGEX = re.compile(r'\[(id|club|public)(\d+)\|([^\]]*)\]')
+
 DISCORD_MESSAGE_LINK = (
     'https://discord.com/channels/{server_id}/{channel_id}/{message_id}'
 )
@@ -160,7 +162,7 @@ async def replace_mentions_as_links(text,
 
     if text:
         new_text = re.sub(
-            r'\[(id|club|public)(\d+)\|([^\]]*)\]',
+            MENTION_REGEX,
             handle_mention,
             text
         )
