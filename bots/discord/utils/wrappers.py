@@ -6,6 +6,7 @@ from disnake.ext import commands
 SUCCESS_EMOJI = '✅'
 FAILURE_EMOJI = '❌'
 WTF_EMOJI = '❗'
+LOADING_EMOJI = '⌛'
 
 
 def optional_arg_decorator(decorator):
@@ -24,11 +25,11 @@ def optional_arg_decorator(decorator):
 
 
 @optional_arg_decorator
-def react_and_delete(func: Callable, *,
-                     exception: Optional[Exception] = None,
-                     exceptions: Optional[tuple] = tuple(),
-                     delete_delay: int = 5,
-                     success_delete_delay: Optional[int] = None):
+def react_success_and_delete(func: Callable, *,
+                             exception: Optional[Exception] = None,
+                             exceptions: Optional[tuple] = tuple(),
+                             delete_delay: int = 5,
+                             success_delete_delay: Optional[int] = None):
     @wraps(func)
     async def wrapper(obj, context: commands.Context, *args, **kwargs):
         message = context.message
@@ -48,5 +49,23 @@ def react_and_delete(func: Callable, *,
                 _delete_delay = success_delete_delay
         finally:
             await message.delete(delay=_delete_delay)
+
+    return wrapper
+
+
+def react_loading(func: Callable):
+    @wraps(func)
+    async def wrapper(obj, context: commands.Context, *args, **kwargs):
+        message = context.message
+
+        await message.add_reaction(LOADING_EMOJI)
+
+        try:
+            await func(obj, context, *args, **kwargs)
+        finally:
+            await message.remove_reaction(
+                LOADING_EMOJI,
+                member=context.bot.user
+            )
 
     return wrapper

@@ -4,7 +4,7 @@ from disnake.ext import commands
 import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
-from bots.discord.utils.wrappers import react_and_delete
+from bots.discord.utils.wrappers import react_success_and_delete, react_loading
 
 
 class SplitError(Exception):
@@ -17,15 +17,13 @@ class GalleryError(Exception):
         self.message = message
 
 
-LOADING_EMOJI = '⌛'
-
-
 class ImageWorking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
-    @react_and_delete(exception=SplitError, success_delete_delay=0)
+    @react_success_and_delete(exception=SplitError, success_delete_delay=0)
+    @react_loading
     async def split(self, context: commands.Context):
         message = context.message
 
@@ -41,8 +39,6 @@ class ImageWorking(commands.Cog):
         author_avatar = ref_message.author.avatar.url
         timestamp = ref_message.created_at
         webhook = await get_channel_send_webhook(context.channel)
-
-        await message.add_reaction(LOADING_EMOJI)
 
         images_urls = freeimagehost.multiple_upload_and_get_url(
             [attachment.url for attachment in attachments]
@@ -72,7 +68,8 @@ class ImageWorking(commands.Cog):
         await ref_message.delete()
 
     @commands.command(name='gallery')
-    @react_and_delete(exception=GalleryError, success_delete_delay=0)
+    @react_success_and_delete(exception=GalleryError, success_delete_delay=0)
+    @react_loading
     async def make_gallery(self, context: commands.Context, mode=None):
         command_message = context.message
         message_to_remove = None
@@ -90,8 +87,6 @@ class ImageWorking(commands.Cog):
 
         if len(attachments) < 2:
             raise GalleryError(message=command_message)
-
-        await command_message.add_reaction(LOADING_EMOJI)
 
         gallery_images = [attachment.url for attachment in attachments]
 

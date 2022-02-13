@@ -1,7 +1,7 @@
 from disnake.ext import commands
 
 import bots
-from bots.discord.utils.wrappers import react_and_delete
+from bots.discord.utils.wrappers import react_success_and_delete
 from bots.exceptions import ChatNotAllowed
 from models import Server
 
@@ -11,7 +11,7 @@ class DiscordToVkConnect(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @react_and_delete(exceptions=ChatNotAllowed)
+    @react_success_and_delete(exceptions=ChatNotAllowed)
     async def connect(self, context: commands.Context, chat_id: int):
         if bots.temp['chats'].get(chat_id, False):
             await Server.create(
