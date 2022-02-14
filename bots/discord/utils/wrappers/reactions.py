@@ -3,25 +3,12 @@ from typing import Callable, Optional
 
 from disnake.ext import commands
 
+from .optional_arg import optional_arg_decorator
+
 SUCCESS_EMOJI = '✅'
 FAILURE_EMOJI = '❌'
 WTF_EMOJI = '❗'
 LOADING_EMOJI = '⌛'
-
-
-def optional_arg_decorator(decorator):
-    @wraps(decorator)
-    def wrapped_decorator(*args, **kwargs):
-        if len(args) == 1:
-            return decorator(args[0])
-
-        else:
-            def real_decorator(function):
-                return decorator(function, *args, **kwargs)
-
-            return real_decorator
-
-    return wrapped_decorator
 
 
 @optional_arg_decorator
