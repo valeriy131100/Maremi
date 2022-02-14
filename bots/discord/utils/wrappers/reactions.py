@@ -21,6 +21,7 @@ def react_success_and_delete(func: Callable, *,
     async def wrapper(obj, context: commands.Context, *args, **kwargs):
         message = context.message
         excepted = exception if exception else exceptions
+        success = False
         _delete_delay = delete_delay
 
         try:
@@ -32,10 +33,14 @@ def react_success_and_delete(func: Callable, *,
             raise unhandled_exception
         else:
             await message.add_reaction(SUCCESS_EMOJI)
+            success = True
             if success_delete_delay is not None:
                 _delete_delay = success_delete_delay
         finally:
-            await message.delete(delay=_delete_delay)
+            if hasattr(context, 'custom_delete') and success:
+                await context.custom_delete(delay=_delete_delay)
+            else:
+                await message.delete(delay=_delete_delay)
 
     return wrapper
 

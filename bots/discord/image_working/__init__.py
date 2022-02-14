@@ -5,6 +5,10 @@ import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
 from bots.discord.utils.wrappers import react_loading, react_success_and_delete
+from bots.discord.utils.wrappers.ref_message import (
+    use_content_message_context,
+    ContentMessageContext
+)
 
 
 class SplitError(Exception):
@@ -68,25 +72,19 @@ class ImageWorking(commands.Cog):
         await ref_message.delete()
 
     @commands.command(name='gallery')
+    @use_content_message_context
     @react_success_and_delete(exception=GalleryError, success_delete_delay=0)
     @react_loading
-    async def make_gallery(self, context: commands.Context, mode=None):
-        command_message = context.message
-        message_to_remove = None
+    async def make_gallery(self, context: ContentMessageContext, mode=None):
+        message = context.content_message
 
-        if ref := context.message.reference:
-            source_message = await context.channel.fetch_message(ref.message_id)
-            message_to_remove = source_message
-        else:
-            source_message = context.message
-
-        author_name = source_message.author.display_name
-        author_avatar = source_message.author.avatar.url
+        author_name = message.author.display_name
+        author_avatar = message.author.avatar.url
         webhook = await get_channel_send_webhook(context.channel)
-        attachments = source_message.attachments
+        attachments = message.attachments
 
         if len(attachments) < 2:
-            raise GalleryError(message=command_message)
+            raise GalleryError(message=message)
 
         gallery_images = [attachment.url for attachment in attachments]
 
@@ -97,9 +95,6 @@ class ImageWorking(commands.Cog):
             invite_mode=invite_mode,
             use_multiple_preview=True
         )
-
-        if message_to_remove:
-            await message_to_remove.delete()
 
         await webhook.send(
             embeds=embeds,
