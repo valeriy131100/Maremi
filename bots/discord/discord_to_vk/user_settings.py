@@ -10,7 +10,7 @@ class DiscordToVkUserSettings(commands.Cog):
 
     @commands.group(pass_context=True, invoke_without_command=True)
     @react_success_and_delete
-    async def nickname(self, context: commands.Context, nickname):
+    async def nickname(self, context: commands.Context, *, nickname):
         await DiscordUser.update_or_create(
             discord_id=context.author.id,
             defaults={
