@@ -4,7 +4,7 @@ from disnake.ext import commands
 import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
-from bots.discord.utils.wrappers import react_success_and_delete, react_loading
+from bots.discord.utils.wrappers import react_loading, react_success_and_delete
 
 
 class SplitError(Exception):
@@ -40,7 +40,7 @@ class ImageWorking(commands.Cog):
         timestamp = ref_message.created_at
         webhook = await get_channel_send_webhook(context.channel)
 
-        images_urls = freeimagehost.multiple_upload_and_get_url(
+        images_urls = await freeimagehost.multiple_upload_and_get_url(
             [attachment.url for attachment in attachments]
         )
 
