@@ -14,9 +14,8 @@ async def get_channel_send_webhook(channel: TextChannel) -> Webhook:
 
 async def get_server_bot_webhooks_ids(server: Guild):
     webhooks = await server.webhooks()
-    bot_webhooks_ids = []
-    for webhook in webhooks:
-        if webhook.name.startswith('Maremi'):
-            bot_webhooks_ids.append(webhook.id)
+    bot_webhooks_ids = [
+        webhook.id for webhook in webhooks if webhook.name.startswith('Maremi')
+    ]
 
     return bot_webhooks_ids
