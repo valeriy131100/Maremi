@@ -203,15 +203,13 @@ async def process_all(media: ProcessedAttachments,
     return embeds, buttons
 
 
-async def get_discord_message(vk_message: vkbottle.bot.Message):
-    from_info = await get_from_info(vk_message.from_id)
-    await from_info.load_nickname()
-
+async def get_discord_message(vk_message: vkbottle.bot.Message,
+                              for_edit=False):
     media = await process_attachments(vk_message.attachments)
     embed = None
     text = await replace_mentions_as_links(
         vk_message.text,
-        vk_message.mention
+        vk_message.mention if not for_edit else None
     )
     buttons = discord.ui.View()
 
@@ -247,13 +245,23 @@ async def get_discord_message(vk_message: vkbottle.bot.Message):
                     f'> [Сообщение]({message_link})\n{formatted_lines}{text}'
                 )
 
-    return {
-        'content': text,
-        'embeds': embeds,
-        'avatar_url': from_info.avatar_url,
-        'username': from_info.nickname,
-        'view': buttons
-    }
+    if for_edit:
+        return {
+            'content': text,
+            'embeds': embeds,
+            'view': buttons
+        }
+    else:
+        from_info = await get_from_info(vk_message.from_id)
+        await from_info.load_nickname()
+
+        return {
+            'content': text,
+            'embeds': embeds,
+            'avatar_url': from_info.avatar_url,
+            'username': from_info.nickname,
+            'view': buttons
+        }
 
 
 async def send_to_discord(channel_id, vk_message: vkbottle.bot.Message):

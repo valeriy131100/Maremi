@@ -1,8 +1,13 @@
 import disnake as discord
+from disnake import HTTPException
 from disnake.ext import commands
+from tortoise.exceptions import DoesNotExist
 
 import bots
 from bots.discord.utils.webhooks import get_server_bot_webhooks_ids
+from bots.discord.utils.wrappers import react_success_and_delete
+from bots.discord.utils.wrappers.ref_message import NotFoundRef, prefetch_ref
+from bots.vk.vk_to_discord import converter as vk_converter
 from models import MessageToMessage, Server
 
 from . import converter
@@ -17,6 +22,44 @@ class DiscordToVk(commands.Cog):
         bot.add_cog(DiscordToVkChannels(bot))
         bot.add_cog(DiscordToVkUserSettings(bot))
         bot.add_cog(DiscordToVkConnect(bot))
+
+    @commands.command()
+    @react_success_and_delete(
+        exceptions=(
+            NotFoundRef,
+            DoesNotExist,
+            HTTPException  # fetching webhook error
+        )
+    )
+    @prefetch_ref
+    async def reload(self, context: commands.Context):
+        ref_message: discord.Message = context.ref_message
+
+        webhook = await self.bot.fetch_webhook(ref_message.webhook_id)
+
+        message_to_message = await MessageToMessage.get(
+            channel_id=ref_message.channel.id,
+            discord_message_id=ref_message.id
+        )
+
+        server = await Server.get(server_id=ref_message.guild.id)
+
+        vk_api = bots.vk_bot.api
+
+        api_answer = await vk_api.messages.get_by_conversation_message_id(
+            peer_id=2000000000 + server.chat_id,
+            conversation_message_ids=[message_to_message.vk_message_id]
+        )
+
+        vk_message = api_answer.items[0]
+
+        discord_message = await vk_converter.get_discord_message(
+            vk_message,
+            for_edit=True
+        )
+
+        await webhook.edit_message(ref_message.id, **discord_message)
+
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
