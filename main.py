@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from tortoise import Tortoise
 
@@ -7,6 +8,7 @@ from bots import discord_bot, vk_bot
 from bots.vk.message_checker import check_messages_periodic
 
 if __name__ == '__main__':
+    logging.disable(logging.CRITICAL)
 
     loop = asyncio.get_event_loop()
 

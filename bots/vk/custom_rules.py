@@ -1,5 +1,6 @@
+import re
 from collections.abc import Iterable
-from typing import Union
+from typing import Union, re as re_types
 
 from tortoise.exceptions import DoesNotExist
 from vkbottle.bot import Message
@@ -7,6 +8,19 @@ from vkbottle.dispatch.rules import ABCRule
 
 import config
 from models import Server, ServerChannelAlias
+
+
+COMPILED_RULES = {}
+
+
+def get_rule(pattern: str) -> re_types.Pattern:
+    compiled = COMPILED_RULES.get(pattern)
+
+    if compiled is None:
+        compiled = re.compile(pattern, re.I)
+        COMPILED_RULES[compiled] = compiled
+
+    return compiled
 
 
 class StartsWithRule(ABCRule):
@@ -36,13 +50,10 @@ class StartsWithRule(ABCRule):
             return False
 
         for command in commands:
-            if event.text.startswith(f'{prefix}{command} '):
-                result_text = event.text.replace(
-                    f'{prefix}{command} ', '', 1
-                )
-                return self.get_return_type(result_text)
-            elif event.text == f'{prefix}{command}':
-                return self.get_return_type('')
+            pattern = get_rule(f'^{prefix}{command}')
+            if pattern.match(event.text):
+                result_text = pattern.sub('', event.text)
+                return self.get_return_type(result_text.lstrip())
         else:
             return False
 
@@ -75,13 +86,11 @@ class AliasRule(ABCRule):
         commands = await commands.values_list('alias', flat=True)
 
         for command in commands:
-            if event.text.startswith(f'{prefix}{command} '):
-                result_text = event.text.replace(
-                    f'{prefix}{command} ', '', 1
-                )
-                return self.get_return_type(result_text, command)
-            elif event.text == f'{prefix}{command}':
-                return self.get_return_type('', command)
+            pattern = get_rule(f'^{prefix}{command}')
+            if pattern.match(event.text):
+                result_text = pattern.sub('', event.text)
+                print(result_text)
+                return self.get_return_type(result_text.lstrip(), command)
         else:
             return False
 
