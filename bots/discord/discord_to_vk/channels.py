@@ -11,11 +11,11 @@ class DiscordToVkChannels(commands.Cog):
 
     @commands.group(pass_context=True, invoke_without_command=True)
     @react_success_and_delete(exception=IntegrityError)
-    async def alias(self, context: commands.Context, alias_word):
+    async def alias(self, context: commands.Context, alias_word: str):
         await ServerChannelAlias.create(
             server_id=context.guild.id,
             channel_id=context.channel.id,
-            alias=alias_word
+            alias=alias_word.lower()
         )
 
     @alias.command(name='remove')
