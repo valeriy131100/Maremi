@@ -89,7 +89,6 @@ class AliasRule(ABCRule):
             pattern = get_rule(f'^{prefix}{command}')
             if pattern.match(event.text):
                 result_text = pattern.sub('', event.text)
-                print(result_text)
                 return self.get_return_type(result_text.lstrip(), command)
         else:
             return False
