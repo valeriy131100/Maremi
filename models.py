@@ -17,7 +17,7 @@ class ServerChannelAlias(Model):
 
     class Meta:
         unique_together = (
-            ('channel_id', 'alias')
+            ('server', 'alias')
         )
 
 
