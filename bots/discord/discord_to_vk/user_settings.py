@@ -10,10 +10,20 @@ class DiscordToVkUserSettings(commands.Cog):
 
     @commands.slash_command()
     async def nickname(self, inter: CommandInteraction) -> None:
-        pass
+        """
+        Nickname management {{NICKNAME}}
+        """
 
-    @nickname.sub_command(description="Устанавливает никнейм для отправки сообщений в ВК")
-    async def set(self, inter: CommandInteraction, nickname: str = commands.Param(name="никнейм")) -> None:
+    @nickname.sub_command()
+    async def set(self, inter: CommandInteraction, nickname: str) -> None:
+        """
+        Set VK nickname {{NICKNAME_SET}}
+
+        Parameters
+        ----------
+        inter: ...
+        nickname: Nickname {{NICKNAME_NICKNAME}}
+        """
         await DiscordUser.update_or_create(
             discord_id=inter.author.id,
             defaults={
@@ -22,8 +32,11 @@ class DiscordToVkUserSettings(commands.Cog):
         )
         await inter.ephemeral("Никнейм успешно изменён")
 
-    @nickname.sub_command(description="Удаляет никнейм для отправки сообщений в ВК")
+    @nickname.sub_command()
     async def remove(self, inter: CommandInteraction) -> None:
+        """
+        Delete VK nickname {{NICKNAME_DELETE}}
+        """
         await DiscordUser.update_or_create(
             discord_id=inter.author.id,
             defaults={

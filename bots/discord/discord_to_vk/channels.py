@@ -20,13 +20,25 @@ class DiscordToVkChannels(commands.Cog):
 
     @commands.slash_command()
     async def alias(self, inter: CommandInteraction) -> None:
+        """
+        Alias management {{ALIAS}}
+        """
         pass
 
     @alias.sub_command(description="Создает алиас для канала")
     async def create(self,
                      inter: CommandInteraction,
-                     name: str = commands.Param(name="название"),
+                     name: str,
                      channel: GuildChannel | None = channel_param) -> None:
+        """
+        Create chat alias {{ALIAS_CREATE}}
+
+        Parameters
+        ----------
+        inter: ...
+        name: name for alias. Unique per server {{NAME_ALIAS}}
+        channel: Discord channel {{CHANNEL}}
+        """
         if channel is None:
             channel_id = inter.channel_id
         else:
@@ -49,6 +61,14 @@ class DiscordToVkChannels(commands.Cog):
     async def remove(self,
                      inter: CommandInteraction,
                      name: str = commands.Param(autocomplete=_remove_autocomplete, name="название")) -> None: # NOQA
+        """
+        Create chat alias {{ALIAS_DELETE}}
+
+        Parameters
+        ----------
+        inter: ...
+        name: name for alias. Unique per server {{NAME_ALIAS}}
+        """
         alias = ServerChannelAlias.filter(server_id=inter.guild_id, alias=name)
         if await alias.exists():
             await alias.delete()
@@ -62,6 +82,14 @@ class DiscordToVkChannels(commands.Cog):
     async def set_duplex(self,
                          inter: CommandInteraction,
                          channel: GuildChannel | None = channel_param) -> None:
+        """
+        Set channel as duplex {{DUPLEX}}
+
+        Parameters
+        ----------
+        inter: ...
+        channel: Discord channel {{CHANNEL}}
+        """
         if channel is None:
             channel_id = inter.channel_id
         else:

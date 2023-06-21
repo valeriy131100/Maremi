@@ -1,5 +1,5 @@
 import disnake as discord
-from disnake import HTTPException, MessageCommandInteraction
+from disnake import HTTPException, MessageCommandInteraction, Localized
 from disnake.ext import commands
 
 import bots
@@ -21,16 +21,30 @@ class DiscordToVk(commands.Cog):
         bot.add_cog(DiscordToVkUserSettings(bot))
         bot.add_cog(DiscordToVkConnect(bot))
 
-    @commands.message_command(name="Перезагрузить сообщение")
+    @staticmethod
+    async def _cant_reload(inter: MessageCommandInteraction) -> None:
+        await inter.edit_original_response("Данное сообщение невозможно перезагрузить")
+
+    @commands.message_command(name=Localized("Reload", key="RELOAD"))
     async def reload(self, inter: MessageCommandInteraction) -> None:
+        await inter.response.defer(ephemeral=True)
+
         ref_message = inter.target
+
+        if ref_message.webhook_id is None:
+            await self._cant_reload(inter)
+            return
 
         webhook = await self.bot.fetch_webhook(ref_message.webhook_id)
 
-        message_to_message = await MessageToMessage.get(
+        message_to_message = await MessageToMessage.get_or_none(
             channel_id=ref_message.channel.id,
             discord_message_id=ref_message.id
         )
+
+        if message_to_message is None:
+            await self._cant_reload(inter)
+            return
 
         server = await Server.get(server_id=ref_message.guild.id)
 
@@ -49,6 +63,8 @@ class DiscordToVk(commands.Cog):
         )
 
         await webhook.edit_message(ref_message.id, **discord_message)
+
+        await inter.delete_original_response()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:

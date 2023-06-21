@@ -1,6 +1,5 @@
 import disnake as discord
 from disnake import Intents
-from disnake.ext import commands
 
 import config
 from bots.help_message_formatter import format_help_message
@@ -19,6 +18,7 @@ discord_bot = Bot(
     intents=intents,
     test_guilds=config.test_guilds
 )
+discord_bot.i18n.load("bots/discord/locale/")
 discord_bot.add_cog(DiscordToVk(discord_bot))
 discord_bot.add_cog(ImageWorking(discord_bot))
 discord_bot.add_cog(Utils(discord_bot))
@@ -39,7 +39,7 @@ async def prepare_slash_command(inter: CommandInteraction) -> bool:
     return False
 
 
-@discord_bot.slash_command(name='help', description="Выводит список комманд")
+@discord_bot.slash_command(name='help', description="Выводит список команд")
 async def help_(inter: CommandInteraction) -> None:
     help_text = await format_help_message("discord_help_message.txt")
     embed = discord.Embed(title="Список команд", description=help_text)

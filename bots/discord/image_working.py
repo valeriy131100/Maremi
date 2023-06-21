@@ -1,4 +1,5 @@
 import disnake as discord
+from disnake import Localized
 from disnake.ext import commands
 
 import freeimagehost
@@ -22,7 +23,7 @@ class ImageWorking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.message_command(name="Разделить вложения")
+    @commands.message_command(name=Localized("Split attachments", key="SPLIT_ATTACHMENTS"))
     async def split(self, inter: CommandInteraction) -> None:
         ref_message = inter.target
 
@@ -65,7 +66,7 @@ class ImageWorking(commands.Cog):
 
         await inter.delete_original_response()
 
-    @commands.message_command(name="Сделать галереей")
+    @commands.message_command(name=Localized("Make gallery", key="MAKE_GALLERY"))
     async def make_gallery(self, inter: CommandInteraction) -> None:
         await inter.response.defer(ephemeral=True)
 
