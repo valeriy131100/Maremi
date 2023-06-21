@@ -10,6 +10,7 @@ class DiscordToVkConnect(commands.Cog):
         self.bot = bot
 
     @commands.slash_command(description="Подключает чат к серверу")
+    @commands.default_member_permissions(manage_guild=True)
     async def connect(self, inter: CommandInteraction, chat_id: int = commands.Param(name="чат")) -> None:
         if bots.temp['chats'].get(chat_id, False):
             if inter.db_server:
@@ -25,6 +26,7 @@ class DiscordToVkConnect(commands.Cog):
         return
 
     @commands.slash_command(description="Отключает сервер от чата")
+    @commands.default_member_permissions(manage_guild=True)
     async def disconnect(self, inter: CommandInteraction) -> None:
         await inter.db_server.delete()
         await inter.ephemeral("Сервер успешно отключен от чата")
