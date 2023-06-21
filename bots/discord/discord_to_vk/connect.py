@@ -10,7 +10,7 @@ class DiscordToVkConnect(commands.Cog):
         self.bot = bot
 
     @commands.slash_command(description="Подключает чат к серверу")
-    async def connect(self, inter: CommandInteraction, chat_id: int) -> None:
+    async def connect(self, inter: CommandInteraction, chat_id: int = commands.Param(name="id чата")) -> None:
         if bots.temp['chats'].get(chat_id, False):
             if inter.db_server:
                 await inter.db_server.delete()

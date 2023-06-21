@@ -66,7 +66,7 @@ class ImageWorking(commands.Cog):
         await inter.delete_original_response()
 
     @commands.message_command(name="Сделать галереей")
-    async def make_gallery(self, inter: "CommandInteraction") -> None:
+    async def make_gallery(self, inter: CommandInteraction) -> None:
         await inter.response.defer(ephemeral=True)
 
         message = inter.target
