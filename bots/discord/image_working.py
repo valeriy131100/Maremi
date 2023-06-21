@@ -4,11 +4,8 @@ from disnake.ext import commands
 import freeimagehost
 from bots.discord.utils.galleries import create_gallery
 from bots.discord.utils.webhooks import get_channel_send_webhook
-from bots.discord.utils.wrappers import react_loading, react_success_and_delete
-from bots.discord.utils.wrappers.ref_message import (
-    use_content_message_context,
-    ContentMessageContext
-)
+
+from bots.discord.base import CommandInteraction
 
 
 class SplitError(Exception):
@@ -25,24 +22,19 @@ class ImageWorking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    @react_success_and_delete(exception=SplitError, success_delete_delay=0)
-    @react_loading
-    async def split(self, context: commands.Context):
-        message = context.message
+    @commands.message_command(name="Разделить вложения")
+    async def split(self, inter: CommandInteraction) -> None:
+        ref_message = inter.target
 
-        if not (ref := context.message.reference):
-            raise SplitError(message=message)
-
-        ref_message = await context.channel.fetch_message(ref.message_id)
+        await inter.response.defer(ephemeral=True)
 
         if not (attachments := ref_message.attachments):
-            raise SplitError(message=message)
+            await inter.edit_original_response("Невозможно разделить сообщение без вложений")
 
         author_name = ref_message.author.display_name
         author_avatar = ref_message.author.avatar.url
         timestamp = ref_message.created_at
-        webhook = await get_channel_send_webhook(context.channel)
+        webhook = await get_channel_send_webhook(ref_message.channel)
 
         images_urls = await freeimagehost.multiple_upload_and_get_url(
             [attachment.url for attachment in attachments]
@@ -71,28 +63,29 @@ class ImageWorking(commands.Cog):
 
         await ref_message.delete()
 
-    @commands.command(name='gallery')
-    @use_content_message_context
-    @react_success_and_delete(exception=GalleryError, success_delete_delay=0)
-    @react_loading
-    async def make_gallery(self, context: ContentMessageContext, mode=None):
-        message = context.content_message
+        await inter.delete_original_response()
+
+    @commands.message_command(name="Сделать галереей")
+    async def make_gallery(self, inter: "CommandInteraction") -> None:
+        await inter.response.defer(ephemeral=True)
+
+        message = inter.target
 
         author_name = message.author.display_name
-        author_avatar = message.author.avatar.url
-        webhook = await get_channel_send_webhook(context.channel)
+        author_avatar = None
+        if message.author.avatar:
+            author_avatar = message.author.avatar.url
+        webhook = await get_channel_send_webhook(message.channel)
         attachments = message.attachments
 
         if len(attachments) < 2:
-            raise GalleryError(message=message)
+            await inter.edit_original_response("Недостаточно изображений для создания галереи")
+            return
 
         gallery_images = [attachment.url for attachment in attachments]
 
-        invite_mode = mode not in ('n', 'noninvite')
-
         embeds, buttons = await create_gallery(
             gallery_images,
-            invite_mode=invite_mode,
             use_multiple_preview=True
         )
 
@@ -102,3 +95,5 @@ class ImageWorking(commands.Cog):
             avatar_url=author_avatar,
             view=buttons
         )
+
+        await inter.delete_original_response()

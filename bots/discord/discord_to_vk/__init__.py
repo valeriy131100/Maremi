@@ -1,39 +1,29 @@
 import disnake as discord
-from disnake import HTTPException
+from disnake import HTTPException, MessageCommandInteraction
 from disnake.ext import commands
-from tortoise.exceptions import DoesNotExist
 
 import bots
 from bots.discord.utils.webhooks import get_server_bot_webhooks_ids
-from bots.discord.utils.wrappers import react_success_and_delete
-from bots.discord.utils.wrappers.ref_message import NotFoundRef, prefetch_ref
 from bots.vk.vk_to_discord import converter as vk_converter
 from models import MessageToMessage, Server
 
 from . import converter
-from .channels import DiscordToVkChannels
-from .connect import DiscordToVkConnect
-from .user_settings import DiscordToVkUserSettings
 
 
 class DiscordToVk(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        from .channels import DiscordToVkChannels
+        from .connect import DiscordToVkConnect
+        from .user_settings import DiscordToVkUserSettings
+
         self.bot = bot
         bot.add_cog(DiscordToVkChannels(bot))
         bot.add_cog(DiscordToVkUserSettings(bot))
         bot.add_cog(DiscordToVkConnect(bot))
 
-    @commands.command()
-    @react_success_and_delete(
-        exceptions=(
-            NotFoundRef,
-            DoesNotExist,
-            HTTPException  # fetching webhook error
-        )
-    )
-    @prefetch_ref
-    async def reload(self, context: commands.Context):
-        ref_message: discord.Message = context.ref_message
+    @commands.message_command(name="Перезагрузить сообщение")
+    async def reload(self, inter: MessageCommandInteraction) -> None:
+        ref_message = inter.target
 
         webhook = await self.bot.fetch_webhook(ref_message.webhook_id)
 
@@ -61,7 +51,7 @@ class DiscordToVk(commands.Cog):
         await webhook.edit_message(ref_message.id, **discord_message)
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if (
             message.content.startswith(self.bot.command_prefix)
             or message.author == self.bot.user
@@ -86,7 +76,7 @@ class DiscordToVk(commands.Cog):
             await converter.send_to_vk(chat_id, message)
 
     @commands.Cog.listener()
-    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
         channel = bots.discord_bot.get_channel(
             payload.channel_id
         )
@@ -120,7 +110,9 @@ class DiscordToVk(commands.Cog):
         )
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent) -> None:
+        if payload.guild_id is None:
+            return
         guild = self.bot.get_guild(payload.guild_id)
         webhooks = await get_server_bot_webhooks_ids(guild)
         if discord_message := payload.cached_message:

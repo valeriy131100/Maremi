@@ -1,49 +1,69 @@
+from disnake.abc import GuildChannel
 from disnake.ext import commands
 from tortoise.exceptions import DoesNotExist, IntegrityError
 
-from bots.discord.utils.wrappers import react_success_and_delete
+from bots.discord import CommandInteraction
 from models import Server, ServerChannelAlias
 
 
+async def _remove_autocomplete(inter: CommandInteraction, user_input: str) -> list[str]:
+    aliases = await ServerChannelAlias.filter(server_id=inter.guild_id).values_list('alias', flat=True)
+    return [alias for alias in aliases if user_input in alias]
+
+
 class DiscordToVkChannels(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
-    @commands.group(pass_context=True, invoke_without_command=True)
-    @react_success_and_delete(exception=IntegrityError)
-    async def alias(self, context: commands.Context, alias_word: str):
-        await ServerChannelAlias.create(
-            server_id=context.guild.id,
-            channel_id=context.channel.id,
-            alias=alias_word.lower()
-        )
+    @commands.slash_command()
+    async def alias(self, inter: CommandInteraction) -> None:
+        pass
 
-    @alias.command(name='remove')
-    @react_success_and_delete(exception=DoesNotExist)
-    async def remove_alias(self, context: commands.Context, alias_word):
-        alias = await ServerChannelAlias.get(
-            server_id=context.guild.id,
-            alias=alias_word
-        )
-        await alias.delete()
+    @alias.sub_command(description="Создает алиас для канала")
+    async def create(self,
+                     inter: CommandInteraction,
+                     name: str,
+                     channel: GuildChannel | None = None) -> None:
+        if channel is None:
+            channel_id = inter.channel_id
+        else:
+            channel_id = channel.id
 
-    @commands.command(name='default')
-    @react_success_and_delete
-    async def set_default(self, context: commands.Context):
-        server = await Server.get(server_id=context.guild.id)
-        server.server_default_channel = context.channel.id
-        await server.save()
+        try:
+            await ServerChannelAlias.create(
+                server_id=inter.guild_id,
+                channel_id=channel_id,
+                alias=name.lower()
+            )
+        except IntegrityError:
+            await inter.ephemeral("Алиас с таким именем уже создан")
+            return
+        else:
+            await inter.ephemeral("Алиас создан")
+            return
 
-    @commands.command(name='art')
-    @react_success_and_delete
-    async def set_art(self, context: commands.Context):
-        server = await Server.get(server_id=context.guild.id)
-        server.default_image_channel = context.channel.id
-        await server.save()
+    @alias.sub_command(name="remove", description="Удаляет выбранный алиас")
+    async def remove(self,
+                     inter: CommandInteraction,
+                     name: str = commands.Param(autocomplete=_remove_autocomplete)) -> None: # NOQA
+        alias = ServerChannelAlias.filter(server_id=inter.guild_id, alias=name)
+        if await alias.exists():
+            await alias.delete()
+            await inter.ephemeral("Алиас успешно удален", ephemeral=True)
+            return
 
-    @commands.command(name='duplex')
-    @react_success_and_delete
-    async def set_duplex(self, context: commands.Context):
-        server = await Server.get(server_id=context.guild.id)
-        server.duplex_channel = context.channel.id
-        await server.save()
+        await inter.ephemeral("Алиаса с таким именем не существует", ephemeral=True)
+        return
+
+    @commands.slash_command(description="Устанавливает канал для дуплексного режима")
+    async def set_duplex(self, inter: CommandInteraction, channel: GuildChannel | None = None) -> None:
+        if channel is None:
+            channel_id = inter.channel_id
+        else:
+            channel_id = channel.id
+
+        server = inter.db_server
+        if server.exists():
+            server.duplex_channel = channel_id
+            await server.save()
+            await inter.ephemeral("Канал для дуплексного режима успешно установлен")

@@ -1,29 +1,33 @@
 from disnake.ext import commands
 
-from bots.discord.utils.wrappers import react_success_and_delete
+from bots.discord import CommandInteraction
 from models import DiscordUser
 
 
 class DiscordToVkUserSettings(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
-    @commands.group(pass_context=True, invoke_without_command=True)
-    @react_success_and_delete
-    async def nickname(self, context: commands.Context, *, nickname):
-        await DiscordUser.update_or_create(
-            discord_id=context.author.id,
-            defaults={
-                'nickname': nickname
-            }
-        )
+    @commands.slash_command()
+    async def nickname(self, inter: CommandInteraction) -> None:
+        pass
 
-    @nickname.command(name='remove')
-    @react_success_and_delete
-    async def remove_nickname(self, context: commands.Context):
+    @nickname.sub_command(description="Устанавливает никнейм для пользователя")
+    async def set(self, inter: CommandInteraction, nickname: str) -> None:
         await DiscordUser.update_or_create(
-            discord_id=context.author.id,
+            discord_id=inter.author.id,
             defaults={
-                'nickname': ''
+                "nickname": nickname
             }
         )
+        await inter.ephemeral("Никнейм успешно изменён")
+
+    @nickname.sub_command(description="Удаляет никнейм")
+    async def remove(self, inter: CommandInteraction) -> None:
+        await DiscordUser.update_or_create(
+            discord_id=inter.author.id,
+            defaults={
+                "nickname": ""
+            }
+        )
+        await inter.ephemeral("Никнейм успешно удален")

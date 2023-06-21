@@ -18,6 +18,10 @@ spotify_client_secret = env('SPOTIFY_CLIENT_SECRET')
 db_file = env('DATABASE', default='sqlite://servers2.db')
 freeimagehost_key = env('FREEIMAGEHOST_KEY')
 
+_test_guilds: list[str] | None = env.list('TEST_GUILDS', default=None)
+
+test_guilds = [int(test_guild) for test_guild in _test_guilds]
+
 TORTOISE_ORM = {
     "connections": {"default": db_file},
     "apps": {

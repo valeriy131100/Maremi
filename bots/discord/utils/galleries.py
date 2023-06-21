@@ -1,5 +1,3 @@
-from typing import Optional
-
 import disnake as discord
 from cache import AsyncLRU
 from disnake.ext import commands
@@ -17,7 +15,7 @@ EXPAND = 'expand'
 
 
 @AsyncLRU()
-async def get_gallery_images(gallery_id):
+async def get_gallery_images(gallery_id: int) -> list[str]:
     gallery_images = await (
         GalleryImages.filter(gallery_id=gallery_id)
                      .order_by('id')
@@ -26,7 +24,7 @@ async def get_gallery_images(gallery_id):
     return gallery_images
 
 
-async def clear_buttons_from_gallery(buttons: discord.ui.View):
+async def clear_buttons_from_gallery(buttons: discord.ui.View) -> discord.ui.View:
     elems_to_remove = []
 
     for elem in buttons.children:
@@ -42,10 +40,10 @@ async def clear_buttons_from_gallery(buttons: discord.ui.View):
     return buttons
 
 
-async def get_gallery_message(attachment_id,
-                              gallery_id,
+async def get_gallery_message(attachment_id: int,
+                              gallery_id: int,
                               embed: discord.Embed,
-                              buttons: discord.ui.View):
+                              buttons: discord.ui.View) -> tuple[discord.Embed, discord.ui.View]:
     attachments = await get_gallery_images(gallery_id)
     images_count = len(attachments)
     back_button = discord.ui.Button(
@@ -76,10 +74,10 @@ async def get_gallery_message(attachment_id,
     return embed, buttons
 
 
-async def get_gallery_invite_message(attachment_id,
-                                     gallery_id,
+async def get_gallery_invite_message(attachment_id: int,
+                                     gallery_id: int,
                                      embed: discord.Embed,
-                                     buttons: discord.ui.View):
+                                     buttons: discord.ui.View) -> tuple[discord.Embed, discord.ui.View]:
     attachments = await get_gallery_images(gallery_id)
     attachments_count = len(attachments)
     gallery_button = discord.ui.Button(
@@ -103,7 +101,7 @@ async def get_gallery_invite_message(attachment_id,
     return embed, buttons
 
 
-async def get_expanded_gallery_message(gallery_id, embed: discord.Embed):
+async def get_expanded_gallery_message(gallery_id: int, embed: discord.Embed) -> list[discord.Embed]:
     attachments = await get_gallery_images(gallery_id)
     embeds = []
     author = embed.author
@@ -126,12 +124,11 @@ async def get_expanded_gallery_message(gallery_id, embed: discord.Embed):
     return embeds
 
 
-async def create_gallery(images,
-                         embed: Optional[discord.Embed] = None,
-                         buttons: Optional[discord.ui.View] = None,
-                         upload=True,
-                         invite_mode=True,
-                         use_multiple_preview=False):
+async def create_gallery(images: list[str],
+                         embed: discord.Embed | None = None,
+                         buttons: discord.ui.View | None = None,
+                         upload: bool = True,
+                         use_multiple_preview: bool = False) -> tuple[list[discord.Embed], discord.ui.View]:
     if upload:
         gallery_images = await freeimagehost.multiple_upload_and_get_url(
             images
@@ -160,10 +157,7 @@ async def create_gallery(images,
     if not buttons:
         buttons = discord.ui.View()
 
-    get_message = (get_gallery_invite_message if invite_mode
-                   else get_gallery_message)
-
-    embed, buttons = await get_message(
+    embed, buttons = await get_gallery_invite_message(
         attachment_id=0,
         gallery_id=gallery_id,
         embed=embed,
@@ -171,7 +165,7 @@ async def create_gallery(images,
     )
 
     if not use_multiple_preview:
-        return embed, buttons
+        return [embed], buttons
     else:
         embeds = []
         if not embed.url:
@@ -189,11 +183,11 @@ async def create_gallery(images,
 
 
 class GalleriesHandler(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_button_click(self, interaction: discord.MessageInteraction):
+    async def on_button_click(self, interaction: discord.MessageInteraction) -> None:
         if interaction.component.custom_id.startswith(GALLERY):
             payload = interaction.component.custom_id
             _, command, attachment_id, gallery_id = payload.split()
@@ -253,4 +247,3 @@ class GalleriesHandler(commands.Cog):
                         embeds=embeds,
                         ephemeral=True
                     )
-
