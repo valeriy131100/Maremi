@@ -1,4 +1,5 @@
 import disnake as discord
+from disnake import Intents
 from disnake.ext import commands
 
 import config
@@ -8,9 +9,12 @@ from .discord_to_vk import DiscordToVk
 from .image_working import ImageWorking
 from .utils import Utils
 
+intents = Intents.all()
+
 discord_bot = commands.Bot(
     command_prefix=config.discord_prefix,
-    help_command=None
+    help_command=None,
+    intents=intents
 )
 discord_bot.add_cog(DiscordToVk(discord_bot))
 discord_bot.add_cog(ImageWorking(discord_bot))
