@@ -1,4 +1,3 @@
-import traceback
 from dataclasses import dataclass, asdict
 
 import disnake as discord

@@ -1,5 +1,8 @@
+import traceback
+
 import disnake as discord
-from disnake import Intents
+from disnake import Intents, errors, InteractionResponded
+from disnake.ext.commands import CommandError
 
 import config
 from bots.help_message_formatter import format_help_message
@@ -39,8 +42,21 @@ async def prepare_slash_command(inter: CommandInteraction) -> bool:
     return False
 
 
+@discord_bot.event
+async def on_slash_command_error(inter: CommandInteraction, exception: CommandError):
+    try:
+        await inter.response.defer(with_message=True, ephemeral=True)
+    except InteractionResponded:
+        pass
+    finally:
+        await inter.edit_original_response("Произошла непредвиденная ошибка", embed=None, view=None)
+
+    traceback.print_exception(exception)
+
+
 @discord_bot.slash_command(name='help', description="Выводит список команд")
 async def help_(inter: CommandInteraction) -> None:
     help_text = await format_help_message("discord_help_message.txt")
     embed = discord.Embed(title="Список команд", description=help_text)
     await inter.send(embed=embed)
+    raise Exception
