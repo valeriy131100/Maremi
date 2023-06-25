@@ -1,7 +1,7 @@
 import traceback
 
 import disnake as discord
-from disnake import Intents, errors, InteractionResponded
+from disnake import Intents, errors, InteractionResponded, InteractionNotResponded, NotFound
 from disnake.ext.commands import CommandError
 
 import config
@@ -49,7 +49,10 @@ async def on_slash_command_error(inter: CommandInteraction, exception: CommandEr
     except InteractionResponded:
         pass
     finally:
-        await inter.edit_original_response("Произошла непредвиденная ошибка", view=None, suppress_embeds=True)
+        try:
+            await inter.edit_original_response("Произошла непредвиденная ошибка", view=None, suppress_embeds=True)
+        except NotFound:
+            await inter.followup.send("Произошла непредвиденная ошибка", ephemeral=True)
 
     if inter.user.id in config.devs:
         formatted_exception = "\n".join(traceback.format_exception(exception))
