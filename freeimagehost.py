@@ -1,11 +1,12 @@
 import asyncio
+from typing import Iterable
 
 import aiohttp
 
 from config import freeimagehost_key
 
 
-async def _get_image_url(image_url, session):
+async def _get_image_url(image_url: str, session: aiohttp.ClientSession) -> str:
     url = 'https://freeimage.host/api/1/upload'
     params = {
         'key': freeimagehost_key,
@@ -18,12 +19,12 @@ async def _get_image_url(image_url, session):
             return image['image']['url']
 
 
-async def upload_and_get_url(image_url):
+async def upload_and_get_url(image_url: str) -> str:
     async with aiohttp.ClientSession() as session:
         return await _get_image_url(image_url, session)
 
 
-async def multiple_upload_and_get_url(images_urls):
+async def multiple_upload_and_get_url(images_urls: Iterable[str]) -> list[str]:
     tasks = []
 
     async with aiohttp.ClientSession() as session:

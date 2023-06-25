@@ -18,10 +18,10 @@ async def get_vk_message(discord_message: discord.Message):
         discord_id=discord_message.author.id
     )
 
-    if user:
-        author_string = f'{user.nickname} ({discord_message.author}):'
+    if user and user.nickname:
+        author_string = f'{user.nickname} ({discord_message.author.display_name}):'
     else:
-        author_string = f'{discord_message.author}:'
+        author_string = f'{discord_message.author.display_name}:'
     message_text = f'{author_string}\n{message_text}'
 
     photo_uploader = PhotoMessageUploader(api=bots.vk_bot.api)

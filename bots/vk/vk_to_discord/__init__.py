@@ -43,6 +43,9 @@ async def alias_send(message: vkbottle.bot.Message, cleared_text, alias):
 
 @bp.on.chat_message(NotStartsWithRule())
 async def duplex_chat(message: vkbottle.bot.Message):
+    # иначе не всегда видно все вложения (например, если в сообщении 2+ видео)
+    await message.get_full_message()
+
     if reply_message := message.reply_message:
         reply_message_to_message = await MessageToMessage.get_or_none(
             server__chat_id=message.chat_id,
@@ -58,19 +61,4 @@ async def duplex_chat(message: vkbottle.bot.Message):
     server = await Server.get(chat_id=message.chat_id)
     if duplex_channel := server.duplex_channel:
         await converter.send_to_discord(duplex_channel, message)
-        
-        
-def event_to_message(event: dict):
-    message = event['object']
-    event['object'] = None
-    event['object'] = {
-        'message': message,
-        'client_info': {}
-    }
-    message = vkbottle.tools.dev.mini_types.bot.message_min(
-        event,
-        ctx_api=bots.vk_bot.api
-    )
-
-    return message
 

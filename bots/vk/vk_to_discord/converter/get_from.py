@@ -14,10 +14,10 @@ class FromInfo:
     avatar_url: str
     url: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.nickname = None
 
-    async def load_nickname(self):
+    async def load_nickname(self) -> None:
         if self.from_id < 0:
             self.nickname = self.name
         else:
@@ -26,11 +26,13 @@ class FromInfo:
                 user_nickname = user.nickname
             else:
                 user_nickname = None
-            self.nickname = (self.name if not user_nickname
-                             else f'{user_nickname} ({self.name})')
+            self.nickname = ( # noqa
+                self.name if not user_nickname
+                else f'{user_nickname} ({self.name})'
+            )
 
 
-async def get_from_info(from_id):
+async def get_from_info(from_id: int) -> FromInfo:
     if from_id < 0:
         group_info = (await bots.vk_bot.api.groups.get_by_id(
             group_id=abs(from_id)

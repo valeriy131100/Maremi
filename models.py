@@ -34,6 +34,8 @@ class VkUser(Model):
 class GalleryImages(Model):
     gallery_id = fields.IntField()
     image_url = fields.TextField()
+    video_link = fields.TextField(default='')
+    video_name = fields.TextField(default='')
 
 
 class MessageToMessage(Model):

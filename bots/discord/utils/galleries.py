@@ -1,3 +1,6 @@
+import traceback
+from dataclasses import dataclass, asdict
+
 import disnake as discord
 from cache import AsyncLRU
 from disnake.ext import commands
@@ -14,14 +17,28 @@ SHOW = 'show'
 EXPAND = 'expand'
 
 
+@dataclass
+class GalleryItem:
+    image_url: str
+    video_link: str = ''
+    video_name: str = ''
+
+    def __post_init__(self):
+        if self.video_name and not self.video_link:
+            raise ValueError
+        if self.video_link and not self.video_name:
+            raise ValueError
+
+
 @AsyncLRU()
-async def get_gallery_images(gallery_id: int) -> list[str]:
+async def get_gallery_images(gallery_id: int) -> list[GalleryItem]:
     gallery_images = await (
         GalleryImages.filter(gallery_id=gallery_id)
                      .order_by('id')
-                     .values_list('image_url', flat=True)
+                     .values('image_url', 'video_link', 'video_name')
     )
-    return gallery_images
+
+    return [GalleryItem(**gallery_image) for gallery_image in gallery_images]
 
 
 async def clear_buttons_from_gallery(buttons: discord.ui.View) -> discord.ui.View:
@@ -40,12 +57,57 @@ async def clear_buttons_from_gallery(buttons: discord.ui.View) -> discord.ui.Vie
     return buttons
 
 
+def add_video_links(embed: discord.Embed, items: list[GalleryItem]) -> discord.Embed:
+    video_links = [
+        (num, item.video_link, item.video_name)
+        for num, item in enumerate(items, start=1) if item.video_link
+    ]
+
+    if not video_links:
+        return embed
+
+    if len(video_links) == 1:
+        name = "Ссылка на видео"
+        formatted_links = (f"[{name}]({link})" for _, link, name in video_links)
+    else:
+        name = "Ссылки на видео"
+        formatted_links = (f"{num}. [{name}]({link})" for num, link, name in video_links)
+
+    embed.add_field(
+        name=name,
+        value="\n".join(formatted_links)
+    )
+
+    return embed
+
+
+def add_video_link(embed, item: GalleryItem):
+    return add_video_links(embed, [item])
+
+
+def remove_video_links(embed: discord.Embed) -> tuple[discord.Embed, list[int]]:
+    indexes = []
+    for num, field in enumerate(embed.fields):
+        if field.name in ('Ссылка на видео', 'Ссылки на видео'):
+            embed.remove_field(num)
+            indexes.append(num)
+
+    return embed, indexes
+
+
 async def get_gallery_message(attachment_id: int,
                               gallery_id: int,
                               embed: discord.Embed,
                               buttons: discord.ui.View) -> tuple[discord.Embed, discord.ui.View]:
-    attachments = await get_gallery_images(gallery_id)
-    images_count = len(attachments)
+    embed, _ = remove_video_links(embed)
+
+    attachments: list[GalleryItem] = await get_gallery_images(gallery_id)
+    attachments_count = len(attachments)
+
+    attachment = attachments[attachment_id]
+    embed.set_image(url=attachment.image_url)
+    embed = add_video_link(embed, attachment)
+
     back_button = discord.ui.Button(
         style=discord.ButtonStyle.primary,
         label='Назад',
@@ -54,7 +116,7 @@ async def get_gallery_message(attachment_id: int,
     )
     num_button = discord.ui.Button(
         style=discord.ButtonStyle.secondary,
-        label=f'{attachment_id + 1}/{images_count}',
+        label=f'{attachment_id + 1}/{attachments_count}',
         custom_id=f'{GALLERY} {NUM} {attachment_id} {gallery_id}',
         row=4
     )
@@ -69,72 +131,54 @@ async def get_gallery_message(attachment_id: int,
     buttons.add_item(num_button)
     buttons.add_item(next_button)
 
-    embed.set_image(url=attachments[attachment_id])
-
-    return embed, buttons
-
-
-async def get_gallery_invite_message(attachment_id: int,
-                                     gallery_id: int,
-                                     embed: discord.Embed,
-                                     buttons: discord.ui.View) -> tuple[discord.Embed, discord.ui.View]:
-    attachments = await get_gallery_images(gallery_id)
-    attachments_count = len(attachments)
-    gallery_button = discord.ui.Button(
-        style=discord.ButtonStyle.primary,
-        label=f'Посмотреть как галерею ({attachments_count})',
-        custom_id=f'{GALLERY} {SHOW} {attachment_id} {gallery_id}',
-        row=4
-    )
-    all_button = discord.ui.Button(
-        style=discord.ButtonStyle.primary,
-        label=f'Посмотреть все сразу ({attachments_count})',
-        custom_id=f'{GALLERY} {EXPAND} {attachment_id} {gallery_id}',
-        row=4
-    )
-
-    buttons.add_item(gallery_button)
-    buttons.add_item(all_button)
-
-    embed.set_image(url=attachments[attachment_id])
-
     return embed, buttons
 
 
 async def get_expanded_gallery_message(gallery_id: int, embed: discord.Embed) -> list[discord.Embed]:
-    attachments = await get_gallery_images(gallery_id)
+    attachments: list[GalleryItem] = await get_gallery_images(gallery_id)
     embeds = []
     author = embed.author
     first_embed = True
+
+    remove_video_links(embed)
+
     for attachment in attachments:
         if first_embed:
             embeds.append(embed)
             first_embed = False
         else:
             attachment_embed = discord.Embed()
-            attachment_embed.set_image(url=attachment)
+            attachment_embed.set_image(url=attachment.image_url)
             if author.name:
                 attachment_embed.set_author(
                     name=author.name,
                     url=author.url,
                     icon_url=author.icon_url
                 )
+            add_video_link(embed, attachment)
             embeds.append(attachment_embed)
 
     return embeds
 
 
-async def create_gallery(images: list[str],
+async def create_gallery(images: list[str | GalleryItem],
                          embed: discord.Embed | None = None,
                          buttons: discord.ui.View | None = None,
                          upload: bool = True,
                          use_multiple_preview: bool = False) -> tuple[list[discord.Embed], discord.ui.View]:
+    for num, image in enumerate(images.copy()):
+        if not isinstance(image, GalleryItem):
+            images[num] = GalleryItem(image)
+
+    images: list[GalleryItem]
+
     if upload:
-        gallery_images = await freeimagehost.multiple_upload_and_get_url(
-            images
+        gallery_images_urls = await freeimagehost.multiple_upload_and_get_url(
+            (image.image_url for image in images)
         )
-    else:
-        gallery_images = images
+        for image, uploaded_url in zip(images, gallery_images_urls):
+            image.image_url = uploaded_url
+    gallery_images = images
 
     max_id_gallery = await (GalleryImages
                             .annotate(max_id=Max('gallery_id'))
@@ -145,8 +189,8 @@ async def create_gallery(images: list[str],
         gallery_id = 0
 
     gallery_image_objects = [
-        GalleryImages(gallery_id=gallery_id, image_url=image_url)
-        for image_url in gallery_images
+        GalleryImages(gallery_id=gallery_id, **asdict(image))
+        for image in gallery_images
     ]
 
     await GalleryImages.bulk_create(objects=gallery_image_objects)
@@ -157,29 +201,43 @@ async def create_gallery(images: list[str],
     if not buttons:
         buttons = discord.ui.View()
 
-    embed, buttons = await get_gallery_invite_message(
-        attachment_id=0,
-        gallery_id=gallery_id,
-        embed=embed,
-        buttons=buttons
+    attachments: list[GalleryItem] = await get_gallery_images(gallery_id)
+    attachments_count = len(attachments)
+
+    attachment = attachments[0]
+    embed.set_image(url=attachment.image_url)
+
+    gallery_button = discord.ui.Button(
+        style=discord.ButtonStyle.primary,
+        label=f'Посмотреть как галерею ({attachments_count})',
+        custom_id=f'{GALLERY} {SHOW} {0} {gallery_id}',
+        row=4
+    )
+    all_button = discord.ui.Button(
+        style=discord.ButtonStyle.primary,
+        label=f'Посмотреть все сразу ({attachments_count})',
+        custom_id=f'{GALLERY} {EXPAND} {0} {gallery_id}',
+        row=4
     )
 
-    if not use_multiple_preview:
-        return [embed], buttons
-    else:
-        embeds = []
-        if not embed.url:
-            embed.url = 'https://example.com'
+    buttons.add_item(gallery_button)
+    buttons.add_item(all_button)
 
-        for i, image_url in enumerate(gallery_images[:3]):
-            if i == 0:
-                embeds.append(embed)
-            else:
-                preview_embed = discord.Embed(url=embed.url)
-                preview_embed.set_image(url=image_url)
-                embeds.append(preview_embed)
+    embeds = []
+    if not embed.url:
+        embed.url = 'https://example.com'
 
-        return embeds, buttons
+    for i, image in enumerate(gallery_images[:3]):
+        if i == 0:
+            embeds.append(embed)
+        else:
+            preview_embed = discord.Embed(url=embed.url)
+            preview_embed.set_image(url=image.image_url)
+            embeds.append(preview_embed)
+
+    add_video_links(embed, attachments)
+
+    return embeds, buttons
 
 
 class GalleriesHandler(commands.Cog):
