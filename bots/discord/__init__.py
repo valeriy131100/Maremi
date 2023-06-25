@@ -49,7 +49,11 @@ async def on_slash_command_error(inter: CommandInteraction, exception: CommandEr
     except InteractionResponded:
         pass
     finally:
-        await inter.edit_original_response("Произошла непредвиденная ошибка", embed=None, view=None)
+        await inter.edit_original_response("Произошла непредвиденная ошибка", view=None, suppress_embeds=True)
+
+    if inter.user.id in config.devs:
+        formatted_exception = "\n".join(traceback.format_exception(exception))
+        await inter.followup.send(f"Ошибка:\n```\n{formatted_exception}```", ephemeral=True)
 
     traceback.print_exception(exception)
 
@@ -59,4 +63,3 @@ async def help_(inter: CommandInteraction) -> None:
     help_text = await format_help_message("discord_help_message.txt")
     embed = discord.Embed(title="Список команд", description=help_text)
     await inter.send(embed=embed)
-    raise Exception
