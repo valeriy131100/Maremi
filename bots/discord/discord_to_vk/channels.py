@@ -8,7 +8,7 @@ from models import Server, ServerChannelAlias
 
 async def _remove_autocomplete(inter: CommandInteraction, user_input: str) -> list[str]:
     aliases = await ServerChannelAlias.filter(server_id=inter.guild_id).values_list('alias', flat=True)
-    return [alias for alias in aliases if user_input in alias]
+    return [alias for alias in aliases if user_input in alias][:25]
 
 
 channel_param = commands.Param(default=None, name="канал")
